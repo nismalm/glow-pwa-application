@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#ffffff" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<title>Glow — Daily Progress</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f3ef;
+    --card: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #6b6b6b;
+    --ink-mute: #a0a0a0;
+    --line: #ececec;
+    --accent: #cdde3f;        /* lime like the reference */
+    --accent-deep: #a8b92f;
+    --coral: #ff7a6b;
+    --lilac: #b8a4ff;
+    --sky: #5ec8ff;
+    --water: #2aa7ff;
+    --water-2: #1989e8;
+    --ok: #3ec97a;
+    --amber: #ffb347;
+    --shadow: 0 10px 30px rgba(20,20,20,.08), 0 2px 6px rgba(20,20,20,.04);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin:0; padding:0; height:100%; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: var(--ink); }
+  body {
+    background:
+      radial-gradient(1200px 600px at 10% -10%, #ffe7e1 0%, transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, #e8e4ff 0%, transparent 55%),
+      radial-gradient(900px 600px at 50% 110%, #e9f6cc 0%, transparent 55%),
+      #f7f5f1;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 12px;
+  }
+
+  /* -------- Phone frame (looks like iPhone) -------- */
+  .phone {
+    width: 390px;
+    height: 844px;
+    background: var(--bg);
+    border-radius: 54px;
+    box-shadow:
+      0 0 0 10px #1a1a1a,
+      0 0 0 12px #2a2a2a,
+      0 40px 80px rgba(20,20,20,.25),
+      0 15px 40px rgba(20,20,20,.15);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  @media (max-width: 430px) {
+    body { padding: 0; background: #0f0f0f; }
+    .phone { width: 100vw; height: 100vh; border-radius: 0; box-shadow: none; }
+    .phone::before { display:none; }
+  }
+
+  .phone::before {
+    content:"";
+    position:absolute;
+    top: 14px; left:50%; transform: translateX(-50%);
+    width: 120px; height: 32px; background:#0b0b0b;
+    border-radius: 999px; z-index: 50;
+  }
+
+  /* Status bar */
+  .status-bar {
+    height: 54px; display:flex; align-items:center; justify-content:space-between;
+    padding: 0 28px; font-size: 15px; font-weight: 600; color:#111;
+    position: relative; z-index: 5;
+  }
+  .status-bar .right { display:flex; gap:6px; align-items:center; }
+  .status-bar svg { width: 18px; height: 12px; }
+
+  /* Screen container */
+  .screens {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+  .screen {
+    position: absolute; inset: 0;
+    overflow-y: auto;
+    padding: 4px 20px 110px;
+    -webkit-overflow-scrolling: touch;
+    opacity: 0; pointer-events: none;
+    transition: opacity .25s ease;
+  }
+  .screen.active { opacity: 1; pointer-events: auto; }
+  .screen::-webkit-scrollbar { display:none; }
+
+  /* Header greeting */
+  .greet { padding: 6px 4px 18px; }
+  .greet .hi { font-size: 13px; color: var(--ink-mute); letter-spacing: .3px; text-transform: uppercase; font-weight: 600; }
+  .greet h1 { margin: 6px 0 4px; font-size: 28px; font-weight: 800; letter-spacing: -.4px; }
+  .greet .sub { font-size: 14px; color: var(--ink-soft); }
+  .greet .row { display:flex; align-items:center; justify-content: space-between; }
+  .avatar {
+    width:44px; height:44px; border-radius: 50%;
+    background: linear-gradient(135deg, #ffd3c9, #ffb0a0);
+    display:flex; align-items:center; justify-content:center; font-weight:800; color:#7a2e21; font-size:16px;
+    box-shadow: var(--shadow);
+  }
+
+  /* Cards */
+  .card {
+    background: var(--card); border-radius: 22px; padding: 18px;
+    box-shadow: var(--shadow); border: 1px solid rgba(0,0,0,.03);
+    margin-bottom: 14px;
+  }
+  .card h3 { margin:0 0 4px; font-size: 15px; font-weight: 700; }
+  .card .muted { color: var(--ink-soft); font-size: 12px; }
+
+  /* Streak chip */
+  .chip {
+    display:inline-flex; align-items:center; gap:6px;
+    background: #111; color: #fff; padding: 6px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 600;
+  }
+  .chip.green { background: var(--accent); color:#1a2a00; }
+  .chip.soft { background:#f1efe9; color:#333; }
+
+  /* Grid stat cards */
+  .stat-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .stat {
+    background: var(--card); border-radius: 20px; padding: 16px;
+    box-shadow: var(--shadow); position: relative; overflow: hidden;
+    border:1px solid rgba(0,0,0,.03);
+  }
+  .stat .label { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
+  .stat .value { font-size: 26px; font-weight: 800; margin-top: 4px; letter-spacing: -.5px; }
+  .stat .trend { font-size: 11px; color: var(--ok); font-weight: 600; margin-top: 2px;}
+  .stat .bg {
+    position:absolute; right:-10px; bottom:-10px; width: 70px; height: 70px; border-radius: 50%; opacity:.5;
+  }
+  .stat.water .bg { background: radial-gradient(circle at 30% 30%, #bfe5ff, #5ec8ff); }
+  .stat.move .bg  { background: radial-gradient(circle at 30% 30%, #ffd8d1, #ff9a86); }
+  .stat.mind .bg  { background: radial-gradient(circle at 30% 30%, #e3d9ff, #b8a4ff); }
+  .stat.streak .bg{ background: radial-gradient(circle at 30% 30%, #e6f5a6, #cdde3f); }
+
+  /* Quote */
+  .quote {
+    background: linear-gradient(135deg, #111 0%, #2a2a2a 100%);
+    color: #fff; border-radius: 22px; padding: 18px; margin-bottom: 14px;
+    position: relative; overflow: hidden;
+  }
+  .quote .q { font-size: 15px; line-height: 1.4; font-weight: 500; }
+  .quote .bubbles { position:absolute; right:-20px; top:-20px; width:120px; height:120px; border-radius:50%; background: var(--accent); opacity:.25; }
+
+  /* ---- Calendar strip (week) ---- */
+  .week {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+    background: var(--card); border-radius: 20px; padding: 10px; box-shadow: var(--shadow);
+    margin-bottom: 16px; border:1px solid rgba(0,0,0,.03);
+  }
+  .day {
+    display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 8px 2px;
+    border-radius: 14px; cursor: pointer; transition: all .2s;
+  }
+  .day .dow { font-size: 11px; color: var(--ink-mute); font-weight: 700; letter-spacing: .5px; }
+  .day .ring {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 2px solid #e6e6e6;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 11px; font-weight: 700; color: var(--ink-soft);
+    margin: 6px 0 4px;
+  }
+  .day .dom { font-size: 11px; color: var(--ink-soft); font-weight: 600; }
+  .day.today .ring { background: var(--accent); border-color: var(--accent); color: #1a2a00; }
+  .day.today .dow { color: var(--ink); }
+  .day.done .ring { background: #1a1a1a; border-color: #1a1a1a; color:#fff; }
+  .day.done .ring::after { content:"✓"; font-size: 13px; }
+  .day.done .ring span { display:none; }
+
+  /* ---- Water page ---- */
+  .water-hero {
+    position: relative;
+    background: var(--card);
+    border-radius: 28px;
+    padding: 18px 18px 22px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    border:1px solid rgba(0,0,0,.03);
+    margin-bottom: 14px;
+  }
+  .water-hero .top {
+    display:flex; align-items:flex-start; justify-content: space-between; gap: 10px; margin-bottom: 6px;
+  }
+  .water-hero .progress-label { font-size: 12px; color: var(--ink-mute); font-weight: 700; letter-spacing: .3px; text-transform: uppercase; }
+  .water-hero .pct { font-size: 44px; font-weight: 900; line-height: 1; letter-spacing: -1.5px; margin-top: 4px; }
+  .water-hero .target { color: var(--ink-soft); font-size: 13px; margin-top: 4px; }
+
+  .figure-wrap {
+    position: relative;
+    height: 260px;
+    display:flex; justify-content:center; align-items:center;
+    margin: 2px 0 4px;
+  }
+  .slider-track {
+    position: absolute;
+    right: 6px; top: 6px; bottom: 6px;
+    width: 10px;
+    background: #eee;
+    border-radius: 999px;
+  }
+  .slider-fill {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(180deg, var(--accent-deep), var(--accent));
+    border-radius: 999px;
+    transition: height .3s ease;
+  }
+  .slider-knob {
+    position: absolute; right: -8px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 4px 10px rgba(0,0,0,.15);
+    transform: translateY(50%);
+    transition: bottom .3s ease;
+  }
+  .slider-knob::after {
+    content:""; position:absolute; inset:7px; border-radius:50%;
+    background:#fff;
+  }
+
+  .figure {
+    width: 140px; height: 260px; position: relative;
+  }
+  .figure svg { width: 100%; height: 100%; display:block; }
+  .figure .fill-rect {
+    transition: y .5s cubic-bezier(.2,.8,.2,1), height .5s cubic-bezier(.2,.8,.2,1);
+  }
+
+  .glasses {
+    display:flex; flex-wrap: wrap; gap: 6px; max-width: 120px;
+    position:absolute; left: 12px; top: 60px;
+  }
+  .glass {
+    width: 22px; height: 26px;
+    background: #f1efe9;
+    border-radius: 3px 3px 6px 6px;
+    position: relative;
+    transition: background .2s;
+  }
+  .glass.filled { background: var(--accent); }
+  .glass::after {
+    content:""; position:absolute; left:3px; right:3px; top:3px; height: 2px;
+    background: rgba(0,0,0,.05); border-radius: 2px;
+  }
+
+  .water-meta {
+    display:flex; justify-content: space-between; align-items:flex-end;
+    padding: 0 4px;
+  }
+  .water-meta .big {
+    font-size: 32px; font-weight: 800; letter-spacing: -.8px;
+  }
+  .water-meta .small { font-size: 12px; color: var(--ink-soft); }
+
+  .motivator {
+    text-align:center; padding: 10px 6px 2px;
+    font-size: 15px; font-weight: 700;
+  }
+  .motivator .sub { font-size: 13px; color: var(--ink-soft); font-weight: 500; margin-top:2px; }
+
+  .water-actions {
+    display:flex; gap: 10px; margin-top: 14px;
+  }
+  .btn {
+    flex: 1; padding: 14px 10px; border-radius: 16px; border: none;
+    font-size: 14px; font-weight: 700; cursor: pointer; transition: transform .08s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn.primary { background: #111; color: #fff; }
+  .btn.secondary { background: #fff; color: #111; border:1px solid var(--line); }
+  .btn.accent { background: var(--accent); color: #1a2a00; }
+
+  /* Exercise form */
+  .form-row { margin-bottom: 14px; }
+  .form-row label { font-size: 13px; font-weight: 600; color: var(--ink); display:block; margin-bottom: 8px; }
+  .toggle {
+    display:flex; gap: 8px;
+  }
+  .toggle button {
+    flex:1; padding: 12px; border-radius: 14px; border: 1px solid var(--line);
+    background: #fff; font-weight: 600; font-size: 13px; cursor: pointer;
+    transition: all .15s;
+  }
+  .toggle button.active { background: #111; color:#fff; border-color:#111; }
+  .chips { display:flex; gap: 8px; flex-wrap: wrap; }
+  .chips .c {
+    padding: 10px 14px; border-radius: 999px; background: #fff; border: 1px solid var(--line);
+    font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items:center; gap:6px;
+  }
+  .chips .c.active { background: var(--accent); border-color: var(--accent); color: #1a2a00; }
+  .intensity { display:flex; gap:6px; }
+  .intensity .b {
+    flex: 1; padding: 14px 4px; border-radius: 14px; border:1px solid var(--line);
+    background: #fff; font-weight: 700; cursor: pointer; font-size: 18px; text-align:center;
+  }
+  .intensity .b.active { background:#111; color:#fff; border-color:#111; }
+  .intensity .b small { display:block; font-size: 9px; font-weight: 600; opacity:.7; margin-top:2px; }
+  .slider-box input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none; appearance: none;
+    background: transparent;
+  }
+  .slider-box input[type="range"]::-webkit-slider-runnable-track {
+    height: 10px; border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent) var(--val,50%), #ececec var(--val,50%));
+  }
+  .slider-box input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance:none; width:26px; height:26px; border-radius:50%;
+    background: #111; margin-top: -8px; cursor:pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,.2);
+  }
+  .slider-box .row { display:flex; justify-content: space-between; font-size: 12px; color: var(--ink-soft); margin-top: 8px; }
+
+  /* My Space - checklist */
+  .check {
+    display:flex; align-items:center; gap: 12px; padding: 12px 6px;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+  }
+  .check:last-child { border-bottom: none; }
+  .check .box {
+    width: 24px; height: 24px; border-radius: 8px; border: 2px solid #ddd; flex:none;
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size: 14px; transition: all .15s;
+  }
+  .check.done .box { background: var(--accent); border-color: var(--accent); color: #1a2a00; }
+  .check .t { font-size: 14px; font-weight: 500; flex:1; }
+  .check.done .t { text-decoration: line-through; color: var(--ink-mute); }
+  .check .emoji { font-size: 18px; }
+
+  /* My Space - calendar */
+  .cal-head {
+    display:flex; align-items:center; justify-content: space-between; margin-bottom: 10px;
+  }
+  .cal-head h4 { margin:0; font-size: 16px; font-weight: 700; }
+  .cal-head .nav { display:flex; gap: 6px; }
+  .cal-head .nav button {
+    width: 30px; height: 30px; border-radius: 10px; border: 1px solid var(--line);
+    background: #fff; cursor:pointer; font-weight: 700;
+  }
+  .cal {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+  }
+  .cal .dow {
+    font-size: 10px; text-align:center; color: var(--ink-mute); font-weight: 700; padding: 4px 0;
+  }
+  .cal .d {
+    aspect-ratio: 1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border-radius: 10px; font-size: 12px; font-weight: 600; cursor:pointer;
+    color: var(--ink);
+  }
+  .cal .d.muted { color: var(--ink-mute); }
+  .cal .d.today { background:#111; color:#fff; }
+  .cal .d.has-task::after {
+    content:""; width:4px; height:4px; border-radius:50%; background: var(--coral);
+    margin-top: 1px;
+  }
+  .cal .d.selected { background: var(--accent); color:#1a2a00; }
+  .cal .d.selected.today { background: var(--accent); color:#1a2a00; }
+
+  .task-list { margin-top: 14px; }
+  .task {
+    display:flex; align-items:center; gap: 10px; padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .task .dot { width:10px; height:10px; border-radius:50%; background: var(--coral); flex:none; }
+  .task .dot.blue { background: var(--sky); }
+  .task .dot.green { background: var(--ok); }
+  .task .t { flex:1; }
+  .task .t .title { font-size: 14px; font-weight: 600; }
+  .task .t .time { font-size: 12px; color: var(--ink-soft); }
+  .task .bell { font-size: 14px; color: var(--ink-mute); }
+
+  .add-task {
+    margin-top: 10px; width: 100%;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    padding: 12px; border-radius: 14px; border: 1px dashed #c7c4bc; background: transparent;
+    color: var(--ink-soft); font-weight: 600; font-size: 13px; cursor: pointer;
+  }
+
+  /* ---- Tab bar ---- */
+  .tabbar {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 40;
+    padding: 10px 16px 28px;
+    background: linear-gradient(180deg, rgba(245,243,239,0) 0%, rgba(245,243,239,.9) 40%, var(--bg) 100%);
+  }
+  .tabs {
+    background: rgba(255,255,255,.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0,0,0,.05);
+    border-radius: 24px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+    padding: 6px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.08);
+  }
+  .tab {
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap: 2px;
+    padding: 10px 4px; border-radius: 18px; cursor: pointer; transition: all .2s;
+    font-size: 10px; font-weight: 700; color: var(--ink-mute);
+  }
+  .tab svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .tab.active {
+    background: #111; color: #fff;
+  }
+  .tab.active svg { stroke: var(--accent); }
+
+  /* charts */
+  .chart-wrap { height: 160px; }
+  .legend { display:flex; gap: 12px; margin-top: 8px; flex-wrap:wrap; }
+  .legend .i { display:flex; align-items:center; gap:6px; font-size: 12px; color: var(--ink-soft); }
+  .legend .i .sw { width: 10px; height: 10px; border-radius: 3px; }
+
+  /* top controls for water page */
+  .top-row {
+    display:flex; align-items:center; justify-content: space-between;
+    margin: 2px 0 12px; padding: 0 2px;
+  }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 14px; background: #fff; border: 1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; cursor: pointer;
+    box-shadow: var(--shadow);
+  }
+  .page-title { font-size: 20px; font-weight: 800; letter-spacing: -.3px; }
+
+  /* rings for dashboard */
+  .rings { display:flex; align-items:center; justify-content:center; gap:16px; padding: 8px 0; }
+  .ring-stat { text-align:center; }
+  .ring-stat .r { width: 72px; height: 72px; position:relative; margin: 0 auto 6px; }
+  .ring-stat svg { width:100%; height:100%; transform: rotate(-90deg); }
+  .ring-stat .v { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size: 15px; }
+  .ring-stat .lbl { font-size: 11px; color: var(--ink-soft); font-weight:600; }
+
+  .banner-cta {
+    background: linear-gradient(135deg, #cdde3f 0%, #a8b92f 100%);
+    border-radius: 22px; padding: 18px; color: #1a2a00;
+    display:flex; align-items:center; justify-content: space-between; gap:10px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+  }
+  .banner-cta .t .h { font-weight:800; font-size: 15px; }
+  .banner-cta .t .s { font-size: 12px; margin-top: 2px; opacity: .8; }
+  .banner-cta button { border:none; background:#111; color:#fff; padding: 10px 14px; border-radius: 12px; font-weight: 700; font-size: 12px; cursor:pointer; }
+
+  /* confetti container */
+  .confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .confetti i {
+    position:absolute; width:8px; height:12px; background: var(--accent); top:-20px;
+    animation: fall 2.5s linear forwards;
+  }
+  @keyframes fall {
+    to { transform: translateY(900px) rotate(720deg); opacity: 0; }
+  }
+
+  .help-note {
+    font-size: 11px; color: var(--ink-mute); text-align:center; padding: 4px 16px 2px;
+  }
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div>9:41</div>
+    <div class="right">
+      <!-- signal -->
+      <svg viewBox="0 0 18 12" fill="#111"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+      <!-- wifi -->
+      <svg viewBox="0 0 16 12" fill="#111"><path d="M8 10.5a1.3 1.3 0 100-2.6 1.3 1.3 0 000 2.6zM3.5 6.5a6.3 6.3 0 019 0l-1 1a4.9 4.9 0 00-7 0l-1-1zM.8 3.8a10.1 10.1 0 0114.4 0l-1 1a8.7 8.7 0 00-12.4 0l-1-1z"/></svg>
+      <!-- battery -->
+      <svg viewBox="0 0 26 12" fill="none"><rect x=".5" y=".5" width="22" height="11" rx="3" stroke="#111"/><rect x="2" y="2" width="18" height="8" rx="1.5" fill="#111"/><rect x="23" y="4" width="2" height="4" rx="1" fill="#111"/></svg>
+    </div>
+  </div>
+
+  <!-- Screens -->
+  <div class="screens" id="screens">
+
+    <!-- DASHBOARD -->
+    <section class="screen active" data-screen="dashboard">
+      <div class="greet">
+        <div class="row">
+          <div>
+            <div class="hi" id="greeting-time">Good morning</div>
+            <h1>Hi, <span id="name">Sweetheart</span> <span style="font-size:22px">✨</span></h1>
+            <div class="sub" id="today-sub">Monday, April 13 · Let's make today count</div>
+          </div>
+          <div class="avatar">S</div>
+        </div>
+      </div>
+
+      <div class="quote">
+        <div class="bubbles"></div>
+        <div class="q" id="daily-quote">"You are doing something incredible, one small step at a time. I'm so proud of you. 💛"</div>
+        <div style="margin-top:10px; font-size: 12px; opacity:.7;">— A love note from today</div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat water">
+          <div class="bg"></div>
+          <div class="label">WATER</div>
+          <div class="value" id="dash-water">7 / 10</div>
+          <div class="trend">▲ 2 more than yesterday</div>
+        </div>
+        <div class="stat move">
+          <div class="bg"></div>
+          <div class="label">MOVEMENT</div>
+          <div class="value">32 min</div>
+          <div class="trend">▲ On fire today</div>
+        </div>
+        <div class="stat mind">
+          <div class="bg"></div>
+          <div class="label">MY SPACE</div>
+          <div class="value">4 / 6</div>
+          <div class="trend">▲ Keep going</div>
+        </div>
+        <div class="stat streak">
+          <div class="bg"></div>
+          <div class="label">STREAK</div>
+          <div class="value">11 days</div>
+          <div class="trend">▲ Personal best</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+          <div>
+            <h3>This week</h3>
+            <div class="muted">Water · Exercise · Focus</div>
+          </div>
+          <div class="chip green">+18% vs last</div>
+        </div>
+        <div class="chart-wrap"><canvas id="weeklyChart"></canvas></div>
+        <div class="legend">
+          <div class="i"><div class="sw" style="background:var(--water)"></div>Water</div>
+          <div class="i"><div class="sw" style="background:var(--coral)"></div>Exercise</div>
+          <div class="i"><div class="sw" style="background:var(--lilac)"></div>My Space</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Today's rings</h3>
+        <div class="muted" style="margin-bottom:6px;">A quick glance at everything</div>
+        <div class="rings">
+          <div class="ring-stat">
+            <div class="r">
+              <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="#eee" stroke-width="5"/><circle cx="18" cy="18" r="15" fill="none" stroke="var(--water)" stroke-width="5" stroke-dasharray="66 100" stroke-linecap="round"/></svg>
+              <div class="v">70%</div>
+            </div>
+            <div class="lbl">Water</div>
+          </div>
+          <div class="ring-stat">
+            <div class="r">
+              <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="#eee" stroke-width="5"/><circle cx="18" cy="18" r="15" fill="none" stroke="var(--coral)" stroke-width="5" stroke-dasharray="80 100" stroke-linecap="round"/></svg>
+              <div class="v">80%</div>
+            </div>
+            <div class="lbl">Exercise</div>
+          </div>
+          <div class="ring-stat">
+            <div class="r">
+              <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="#eee" stroke-width="5"/><circle cx="18" cy="18" r="15" fill="none" stroke="var(--lilac)" stroke-width="5" stroke-dasharray="66 100" stroke-linecap="round"/></svg>
+              <div class="v">66%</div>
+            </div>
+            <div class="lbl">My Space</div>
+          </div>
+          <div class="ring-stat">
+            <div class="r">
+              <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="#eee" stroke-width="5"/><circle cx="18" cy="18" r="15" fill="none" stroke="var(--accent-deep)" stroke-width="5" stroke-dasharray="90 100" stroke-linecap="round"/></svg>
+              <div class="v">90%</div>
+            </div>
+            <div class="lbl">Overall</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="banner-cta">
+        <div class="t">
+          <div class="h">You're 3 glasses away! 💧</div>
+          <div class="s">Finish your water to keep the 11-day streak alive</div>
+        </div>
+        <button onclick="switchTab('water')">Open</button>
+      </div>
+    </section>
+
+    <!-- WATER -->
+    <section class="screen" data-screen="water">
+      <div class="top-row">
+        <div class="icon-btn" aria-label="back">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </div>
+        <div class="page-title">Stay Hydrated</div>
+        <div class="icon-btn" aria-label="share">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg>
+        </div>
+      </div>
+
+      <!-- week strip -->
+      <div class="week" id="weekStrip"></div>
+
+      <!-- hero -->
+      <div class="water-hero">
+        <div class="top">
+          <div>
+            <div class="progress-label">Progress</div>
+            <div class="pct" id="waterPct">70%</div>
+            <div class="target">Goal: 10 glasses · <span id="waterCountText">7 of 10</span></div>
+          </div>
+          <div class="chip green" id="waterBadge">Keep going!</div>
+        </div>
+
+        <div class="figure-wrap">
+          <!-- glasses legend -->
+          <div class="glasses" id="glasses"></div>
+
+          <!-- human figure with water fill -->
+          <div class="figure">
+            <svg viewBox="0 0 140 260" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <clipPath id="bodyClip">
+                  <!-- approximate body silhouette -->
+                  <path d="M70 8
+                           c-10 0 -16 8 -16 18
+                           c0 10 6 18 16 18
+                           c10 0 16 -8 16 -18
+                           c0 -10 -6 -18 -16 -18z
+                           M52 52
+                           c-10 4 -16 14 -18 28
+                           l-6 40
+                           c-1 6 3 10 8 10
+                           l6 -2
+                           l-3 40
+                           c-1 30 4 60 8 74
+                           c1 6 6 10 12 10
+                           h2
+                           c4 0 6 -4 6 -8
+                           l-2 -40
+                           h10
+                           l-2 40
+                           c0 4 2 8 6 8
+                           h2
+                           c6 0 11 -4 12 -10
+                           c4 -14 9 -44 8 -74
+                           l-3 -40
+                           l6 2
+                           c5 0 9 -4 8 -10
+                           l-6 -40
+                           c-2 -14 -8 -24 -18 -28z"/>
+                </clipPath>
+                <linearGradient id="waterGrad" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0" stop-color="#5ec8ff"/>
+                  <stop offset="1" stop-color="#1989e8"/>
+                </linearGradient>
+              </defs>
+
+              <!-- outline -->
+              <path d="M70 8
+                       c-10 0 -16 8 -16 18
+                       c0 10 6 18 16 18
+                       c10 0 16 -8 16 -18
+                       c0 -10 -6 -18 -16 -18z
+                       M52 52
+                       c-10 4 -16 14 -18 28
+                       l-6 40
+                       c-1 6 3 10 8 10
+                       l6 -2
+                       l-3 40
+                       c-1 30 4 60 8 74
+                       c1 6 6 10 12 10
+                       h2
+                       c4 0 6 -4 6 -8
+                       l-2 -40
+                       h10
+                       l-2 40
+                       c0 4 2 8 6 8
+                       h2
+                       c6 0 11 -4 12 -10
+                       c4 -14 9 -44 8 -74
+                       l-3 -40
+                       l6 2
+                       c5 0 9 -4 8 -10
+                       l-6 -40
+                       c-2 -14 -8 -24 -18 -28z"
+                    fill="none" stroke="#d0d0d0" stroke-width="1.5"/>
+
+              <!-- water fill (clipped to body) -->
+              <g clip-path="url(#bodyClip)">
+                <rect class="fill-rect" id="bodyFill" x="0" y="260" width="140" height="0" fill="url(#waterGrad)"/>
+                <!-- wave -->
+                <path id="wave" d="M0 260 Q35 256 70 260 T140 260 V270 H0 Z" fill="rgba(255,255,255,.25)"/>
+              </g>
+
+              <!-- hat -->
+              <path d="M58 8 Q70 -4 82 8 L82 12 L58 12 Z" fill="#cfe2ff"/>
+              <circle cx="70" cy="2" r="3" fill="#cfe2ff"/>
+            </svg>
+          </div>
+
+          <!-- slider -->
+          <div class="slider-track">
+            <div class="slider-fill" id="sliderFill" style="height: 70%"></div>
+            <div class="slider-knob" id="sliderKnob" style="bottom: 70%"></div>
+          </div>
+        </div>
+
+        <div class="motivator" id="motivator">
+          Great, you're doing amazing!
+          <div class="sub">Keep sipping — you've got this 💛</div>
+        </div>
+
+        <div class="water-actions">
+          <button class="btn secondary" onclick="changeGlasses(-1)">− Remove</button>
+          <button class="btn accent" onclick="changeGlasses(1)">+ Add a glass</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h3>Daily goal</h3>
+            <div class="muted">Idle target: 10 glasses · exceed it for bonus 🌟</div>
+          </div>
+          <span class="chip soft" id="streakChip">🔥 11-day streak</span>
+        </div>
+      </div>
+
+      <div class="help-note">Data auto-saves to Firestore · Reminders via FCM</div>
+    </section>
+
+    <!-- EXERCISE -->
+    <section class="screen" data-screen="exercise">
+      <div class="top-row">
+        <div></div>
+        <div class="page-title">Exercise</div>
+        <div class="icon-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>
+        </div>
+      </div>
+
+      <div class="week" id="weekStripEx"></div>
+
+      <div class="card">
+        <h3>Today's movement 🏃‍♀️</h3>
+        <div class="muted" style="margin-bottom: 14px;">Small steps, big wins</div>
+
+        <div class="form-row">
+          <label>Did you workout today?</label>
+          <div class="toggle" id="workoutToggle">
+            <button class="active" data-v="yes">Yes, I did! 💪</button>
+            <button data-v="rest">Rest day</button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label>What did you do?</label>
+          <div class="chips" id="typeChips">
+            <div class="c active">🚶 Walk</div>
+            <div class="c">🧘 Yoga</div>
+            <div class="c">💪 Strength</div>
+            <div class="c">🏃 Run</div>
+            <div class="c">🩰 Dance</div>
+            <div class="c">🚴 Cycle</div>
+          </div>
+        </div>
+
+        <div class="form-row slider-box" id="durationBox">
+          <label>How long? <span style="float:right; color: var(--ink-soft); font-weight: 700;"><span id="durVal">30</span> min</span></label>
+          <input type="range" id="duration" min="0" max="120" value="30" />
+          <div class="row"><span>0</span><span>60</span><span>120</span></div>
+        </div>
+
+        <div class="form-row">
+          <label>How intense did it feel?</label>
+          <div class="intensity" id="intensity">
+            <div class="b" data-v="1">😌<small>Easy</small></div>
+            <div class="b" data-v="2">🙂<small>Light</small></div>
+            <div class="b active" data-v="3">😅<small>Good</small></div>
+            <div class="b" data-v="4">🥵<small>Tough</small></div>
+            <div class="b" data-v="5">🔥<small>Max</small></div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label>A quick note (optional)</label>
+          <textarea placeholder="How are you feeling? Any wins today?" style="width:100%; border:1px solid var(--line); border-radius:14px; padding:12px; font-family:inherit; font-size:14px; resize: none; min-height: 70px;"></textarea>
+        </div>
+
+        <button class="btn primary" style="width:100%;">Save today's workout ✨</button>
+      </div>
+
+      <div class="card">
+        <h3>This week</h3>
+        <div class="chart-wrap" style="height: 140px;"><canvas id="exerciseChart"></canvas></div>
+      </div>
+    </section>
+
+    <!-- MY SPACE -->
+    <section class="screen" data-screen="myspace">
+      <div class="top-row">
+        <div></div>
+        <div class="page-title">My Space</div>
+        <div class="icon-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"><path d="M12 3l2 5 5 .5-4 3.5 1 5-4.5-2.5L7 17l1-5-4-3.5L9 8z"/></svg>
+        </div>
+      </div>
+
+      <div class="card" style="background: linear-gradient(135deg, #111, #2a2a2a); color:#fff;">
+        <div style="font-size: 12px; opacity:.7; font-weight:600; letter-spacing: .4px;">TODAY</div>
+        <div style="font-size: 20px; font-weight: 800; margin-top: 4px;">You, first. 💛</div>
+        <div style="font-size: 13px; opacity: .7; margin-top: 4px;">4 of 6 rituals · 1 task due</div>
+        <div style="height: 6px; background: rgba(255,255,255,.12); border-radius: 999px; margin-top: 12px; overflow:hidden;">
+          <div style="height:100%; width:66%; background: var(--accent); border-radius: 999px;"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Daily rituals</h3>
+        <div class="muted" style="margin-bottom: 10px;">Little things that make a great day</div>
+
+        <div class="check done" data-id="study">
+          <div class="box">✓</div>
+          <span class="emoji">📚</span>
+          <div class="t">Studied today</div>
+        </div>
+        <div class="check done" data-id="read">
+          <div class="box">✓</div>
+          <span class="emoji">📖</span>
+          <div class="t">Read 10 pages</div>
+        </div>
+        <div class="check done" data-id="medi">
+          <div class="box">✓</div>
+          <span class="emoji">🧘‍♀️</span>
+          <div class="t">Meditated for 5 min</div>
+        </div>
+        <div class="check done" data-id="grat">
+          <div class="box">✓</div>
+          <span class="emoji">✨</span>
+          <div class="t">3 things I'm grateful for</div>
+        </div>
+        <div class="check" data-id="skin">
+          <div class="box"></div>
+          <span class="emoji">💆‍♀️</span>
+          <div class="t">Skincare / self-care</div>
+        </div>
+        <div class="check" data-id="call">
+          <div class="box"></div>
+          <span class="emoji">📞</span>
+          <div class="t">Called someone I love</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cal-head">
+          <div>
+            <h4 id="calTitle">April 2026</h4>
+            <div class="muted">Tap a date to add reminders</div>
+          </div>
+          <div class="nav">
+            <button id="calPrev">‹</button>
+            <button id="calNext">›</button>
+          </div>
+        </div>
+        <div class="cal" id="cal"></div>
+
+        <div class="task-list" id="taskList">
+          <div class="task">
+            <div class="dot"></div>
+            <div class="t">
+              <div class="title">Doctor's appointment</div>
+              <div class="time">Today · 4:30 PM</div>
+            </div>
+            <div class="bell">🔔</div>
+          </div>
+          <div class="task">
+            <div class="dot blue"></div>
+            <div class="t">
+              <div class="title">Yoga class with friends</div>
+              <div class="time">Tomorrow · 7:00 AM</div>
+            </div>
+            <div class="bell">🔔</div>
+          </div>
+          <div class="task">
+            <div class="dot green"></div>
+            <div class="t">
+              <div class="title">Read a chapter before bed</div>
+              <div class="time">Daily · 10:00 PM</div>
+            </div>
+            <div class="bell">🔔</div>
+          </div>
+        </div>
+
+        <button class="add-task">+ Add reminder or task</button>
+      </div>
+
+      <div class="card">
+        <h3>Weekly mood 💜</h3>
+        <div class="muted" style="margin-bottom:8px;">How you've been feeling</div>
+        <div class="chart-wrap" style="height: 120px;"><canvas id="moodChart"></canvas></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Tab bar -->
+  <div class="tabbar">
+    <div class="tabs">
+      <div class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">
+        <svg viewBox="0 0 24 24"><path d="M3 13h7V3H3zM14 3v5h7V3zM3 21h7v-6H3zM14 21h7v-10h-7z"/></svg>
+        <div>Dashboard</div>
+      </div>
+      <div class="tab" data-tab="water" onclick="switchTab('water')">
+        <svg viewBox="0 0 24 24"><path d="M12 3c-4 4.5-7 8-7 12a7 7 0 0014 0c0-4-3-7.5-7-12z"/></svg>
+        <div>Water</div>
+      </div>
+      <div class="tab" data-tab="exercise" onclick="switchTab('exercise')">
+        <svg viewBox="0 0 24 24"><path d="M6 8v8M2 12h4M18 8v8M22 12h-4M9 6h6v12H9z"/></svg>
+        <div>Exercise</div>
+      </div>
+      <div class="tab" data-tab="myspace" onclick="switchTab('myspace')">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
+        <div>My Space</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="confetti" id="confetti"></div>
+</div>
+
+<script>
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+function switchTab(name) {
+  $$('.screen').forEach(s => s.classList.toggle('active', s.dataset.screen === name));
+  $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  if (name === 'dashboard') ensureCharts();
+  if (name === 'exercise') ensureExerciseChart();
+  if (name === 'myspace') ensureMoodChart();
+}
+window.switchTab = switchTab;
+
+/* ---------- Greeting ---------- */
+(function(){
+  const h = new Date().getHours();
+  let g = 'Good morning';
+  if (h >= 12 && h < 17) g = 'Good afternoon';
+  else if (h >= 17) g = 'Good evening';
+  $('#greeting-time').textContent = g;
+  const now = new Date();
+  const opts = { weekday: 'long', month: 'long', day: 'numeric' };
+  $('#today-sub').textContent = now.toLocaleDateString(undefined, opts) + " · Let's make today count";
+})();
+
+/* ---------- Week strip ---------- */
+function renderWeek(el) {
+  const container = $(el);
+  const today = new Date();
+  container.innerHTML = '';
+  const dows = ['S','M','T','W','T','F','S'];
+  for (let i = -3; i <= 3; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const isToday = i === 0;
+    const isDone = i < 0 && Math.random() > .25;
+    const div = document.createElement('div');
+    div.className = 'day' + (isToday ? ' today' : '') + (isDone ? ' done' : '');
+    div.innerHTML = `
+      <div class="dow">${dows[d.getDay()]}</div>
+      <div class="ring"><span>${isToday ? '' : d.getDate()}</span></div>
+      <div class="dom">${d.toLocaleDateString(undefined, { month:'short' })} ${d.getDate()}</div>
+    `;
+    container.appendChild(div);
+  }
+}
+renderWeek('#weekStrip');
+renderWeek('#weekStripEx');
+
+/* ---------- Water ---------- */
+let glasses = 7;
+const goal = 10;
+
+function renderGlasses() {
+  const el = $('#glasses'); el.innerHTML = '';
+  for (let i=0; i<goal; i++) {
+    const g = document.createElement('div');
+    g.className = 'glass' + (i < glasses ? ' filled' : '');
+    el.appendChild(g);
+  }
+}
+
+function renderWater() {
+  const pct = Math.min(200, Math.round((glasses / goal) * 100));
+  $('#waterPct').textContent = pct + '%';
+  $('#waterCountText').textContent = `${glasses} of ${goal}`;
+  $('#dash-water').textContent = `${glasses} / ${goal}`;
+
+  // fill height (cap visual at 100%)
+  const vis = Math.min(100, pct);
+  const svg = $('#bodyFill');
+  const totalH = 260;
+  const h = (vis / 100) * totalH;
+  svg.setAttribute('y', totalH - h);
+  svg.setAttribute('height', h);
+
+  $('#sliderFill').style.height = vis + '%';
+  $('#sliderKnob').style.bottom = vis + '%';
+
+  // color shift on overachieve
+  if (glasses >= goal) {
+    document.documentElement.style.setProperty('--water', '#cdde3f');
+    document.documentElement.style.setProperty('--water-2', '#a8b92f');
+  } else {
+    document.documentElement.style.setProperty('--water', '#2aa7ff');
+    document.documentElement.style.setProperty('--water-2', '#1989e8');
+  }
+
+  const m = $('#motivator');
+  const badge = $('#waterBadge');
+  if (glasses === 0) {
+    m.innerHTML = `Let's start the day 🌱<div class="sub">Sip one glass to begin</div>`;
+    badge.textContent = "Let's begin"; badge.className='chip soft';
+  } else if (glasses < goal/2) {
+    m.innerHTML = `You've got this 💪<div class="sub">Little sips add up — keep going</div>`;
+    badge.textContent = 'Great start'; badge.className='chip soft';
+  } else if (glasses < goal) {
+    m.innerHTML = `Almost there, love 💛<div class="sub">A few more and you're done</div>`;
+    badge.textContent = 'Keep going!'; badge.className='chip green';
+  } else if (glasses === goal) {
+    m.innerHTML = `Great, you've done it! 🎉<div class="sub">Keep it up — you're a star</div>`;
+    badge.textContent = '✓ Goal hit'; badge.className='chip green';
+    confettiBurst();
+  } else {
+    m.innerHTML = `Overachiever! 🌟<div class="sub">You're going above and beyond ${glasses - goal} glasses!</div>`;
+    badge.textContent = '🔥 Legend'; badge.className='chip green';
+  }
+}
+
+function changeGlasses(delta) {
+  glasses = Math.max(0, Math.min(20, glasses + delta));
+  renderGlasses();
+  renderWater();
+}
+window.changeGlasses = changeGlasses;
+
+renderGlasses();
+renderWater();
+
+/* Confetti */
+function confettiBurst() {
+  const c = $('#confetti');
+  c.innerHTML = '';
+  const colors = ['#cdde3f','#ff7a6b','#b8a4ff','#5ec8ff','#ffb347'];
+  for (let i=0; i<30; i++) {
+    const s = document.createElement('i');
+    s.style.left = Math.random()*100 + '%';
+    s.style.background = colors[Math.floor(Math.random()*colors.length)];
+    s.style.animationDuration = (1.8 + Math.random()*1.6) + 's';
+    s.style.animationDelay = (Math.random()*.3) + 's';
+    s.style.width = (6 + Math.random()*6) + 'px';
+    s.style.height = (10 + Math.random()*10) + 'px';
+    c.appendChild(s);
+  }
+  setTimeout(()=> c.innerHTML = '', 3000);
+}
+
+/* ---------- Exercise form ---------- */
+$$('#workoutToggle button').forEach(b => b.addEventListener('click', () => {
+  $$('#workoutToggle button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  if (b.dataset.v === 'rest') {
+    $('#durationBox').style.opacity = .4;
+  } else {
+    $('#durationBox').style.opacity = 1;
+  }
+}));
+$$('#typeChips .c').forEach(c => c.addEventListener('click', () => c.classList.toggle('active')));
+$$('#intensity .b').forEach(b => b.addEventListener('click', () => {
+  $$('#intensity .b').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+}));
+const dur = $('#duration');
+dur.style.setProperty('--val', dur.value + '%');
+dur.addEventListener('input', () => {
+  $('#durVal').textContent = dur.value;
+  dur.style.setProperty('--val', (dur.value / 120 * 100) + '%');
+});
+
+/* ---------- My Space checklist ---------- */
+$$('.check').forEach(c => c.addEventListener('click', () => {
+  c.classList.toggle('done');
+  const box = c.querySelector('.box');
+  box.textContent = c.classList.contains('done') ? '✓' : '';
+}));
+
+/* ---------- Calendar ---------- */
+let calDate = new Date();
+function renderCal() {
+  const cal = $('#cal'); cal.innerHTML = '';
+  const dows = ['S','M','T','W','T','F','S'];
+  dows.forEach(d => {
+    const x = document.createElement('div');
+    x.className = 'dow'; x.textContent = d; cal.appendChild(x);
+  });
+  const y = calDate.getFullYear(), m = calDate.getMonth();
+  $('#calTitle').textContent = calDate.toLocaleDateString(undefined, { month:'long', year:'numeric' });
+  const firstDay = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const prevDays = new Date(y, m, 0).getDate();
+  const today = new Date();
+  const taskDays = [15, 22, 28];
+
+  for (let i=0; i<firstDay; i++) {
+    const d = document.createElement('div');
+    d.className = 'd muted'; d.textContent = prevDays - firstDay + i + 1;
+    cal.appendChild(d);
+  }
+  for (let i=1; i<=daysInMonth; i++) {
+    const d = document.createElement('div');
+    d.className = 'd';
+    if (y === today.getFullYear() && m === today.getMonth() && i === today.getDate()) d.classList.add('today');
+    if (taskDays.includes(i)) d.classList.add('has-task');
+    d.textContent = i;
+    d.addEventListener('click', () => {
+      $$('#cal .d').forEach(x => x.classList.remove('selected'));
+      d.classList.add('selected');
+    });
+    cal.appendChild(d);
+  }
+}
+renderCal();
+$('#calPrev').addEventListener('click', () => { calDate.setMonth(calDate.getMonth()-1); renderCal(); });
+$('#calNext').addEventListener('click', () => { calDate.setMonth(calDate.getMonth()+1); renderCal(); });
+
+/* ---------- Charts ---------- */
+let weeklyChart, exerciseChart, moodChart;
+function ensureCharts() {
+  if (weeklyChart) return;
+  const ctx = $('#weeklyChart');
+  weeklyChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+      datasets: [
+        { label:'Water', data:[8,10,6,9,10,11,7], backgroundColor:'#2aa7ff', borderRadius: 8, barPercentage:.7, categoryPercentage:.6 },
+        { label:'Exercise', data:[25,40,0,30,45,20,32], backgroundColor:'#ff7a6b', borderRadius: 8, barPercentage:.7, categoryPercentage:.6 },
+        { label:'MySpace', data:[4,6,5,3,6,4,4], backgroundColor:'#b8a4ff', borderRadius: 8, barPercentage:.7, categoryPercentage:.6 },
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins: { legend: { display:false } },
+      scales: {
+        x: { grid: { display:false }, ticks: { color:'#999', font:{size:10} } },
+        y: { grid: { color:'#f0f0f0' }, ticks: { color:'#999', font:{size:10} } }
+      }
+    }
+  });
+}
+function ensureExerciseChart() {
+  if (exerciseChart) return;
+  exerciseChart = new Chart($('#exerciseChart'), {
+    type: 'line',
+    data: {
+      labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+      datasets: [{
+        data: [25,40,0,30,45,20,32],
+        borderColor: '#ff7a6b',
+        backgroundColor: 'rgba(255,122,107,.15)',
+        fill: true, tension: .4, pointRadius: 4, pointBackgroundColor:'#ff7a6b'
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins: { legend: { display:false } },
+      scales: {
+        x: { grid: { display:false }, ticks: { color:'#999', font:{size:10} } },
+        y: { grid: { color:'#f0f0f0' }, ticks: { color:'#999', font:{size:10} } }
+      }
+    }
+  });
+}
+function ensureMoodChart() {
+  if (moodChart) return;
+  moodChart = new Chart($('#moodChart'), {
+    type: 'line',
+    data: {
+      labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+      datasets: [{
+        data: [3,4,3,4,5,4,5],
+        borderColor: '#b8a4ff',
+        backgroundColor: 'rgba(184,164,255,.18)',
+        fill:true, tension:.45, pointRadius:4, pointBackgroundColor:'#b8a4ff'
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins: { legend: { display:false } },
+      scales: {
+        x: { grid: { display:false }, ticks: { color:'#999', font:{size:10} } },
+        y: { min:1, max:5, grid: { color:'#f0f0f0' }, ticks: { color:'#999', font:{size:10}, stepSize:1 } }
+      }
+    }
+  });
+}
+ensureCharts();
+
+</script>
+</body>
+</html>
