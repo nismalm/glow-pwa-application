@@ -1,0 +1,56 @@
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+@import '@fontsource/inter/800.css';
+@import '@fontsource/inter/900.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #f5f3ef;
+    --card: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #6b6b6b;
+    --ink-mute: #a0a0a0;
+    --line: #ececec;
+    --accent: #cdde3f;
+    --accent-deep: #a8b92f;
+    --coral: #ff7a6b;
+    --lilac: #b8a4ff;
+    --sky: #5ec8ff;
+    --water: #2aa7ff;
+    --water-2: #1989e8;
+    --ok: #3ec97a;
+    --amber: #ffb347;
+    --shadow: 0 2px 16px 0 rgba(0, 0, 0, 0.07);
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f3ef;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer utilities {
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

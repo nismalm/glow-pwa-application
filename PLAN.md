@@ -62,8 +62,6 @@ progress-tracker/
 │   ├── vite-env.d.ts
 │   │
 │   ├── app/
-│   │   ├── PhoneFrame.tsx
-│   │   ├── StatusBar.tsx
 │   │   ├── TabBar.tsx
 │   │   └── ScreenTransition.tsx
 │   │
@@ -226,35 +224,25 @@ Queries:
 **Goal:** A deployable empty shell that renders the iPhone phone frame, 4 empty tabs, status bar, and ships as an installable PWA with all design tokens wired.
 
 ### Deliverables
-- [ ] `npm create vite@latest` with `react-ts` template, React 18.
-- [ ] `tsconfig.json` with `"strict": true`, path alias `@/* → src/*`.
-- [ ] Tailwind v3 installed; `tailwind.config.ts` mirrors every token from the [mapping table](#design-token-mapping).
-- [ ] Inter font loaded via `@fontsource/inter` (not CDN — offline-friendly).
-- [ ] `PhoneFrame` component: 390×844, 54px radius, notch `::before`; drops to `100vw/100vh` at `≤430px` via Tailwind `@media`.
-- [ ] `StatusBar` component: live time via `useEffect` + `setInterval(60000)`, battery/signal/wifi SVGs.
-- [ ] `TabBar` component: 4 tabs with `lucide-react` icons (Home, Droplet, Dumbbell, Sparkles), glassmorphic (`backdrop-blur-xl bg-white/70`), safe-area padding.
-- [ ] React Router v6 with routes `/`, `/water`, `/exercise`, `/myspace`. `NavLink` active state drives accent pill.
-- [ ] Empty `Screen` placeholders rendered per route.
-- [ ] `vite-plugin-pwa` installed and configured with `registerType: 'autoUpdate'`, basic manifest.
-- [ ] iOS meta tags in `index.html`:
-  ```html
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Glow">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-  <meta name="theme-color" content="#f5f3ef">
-  ```
-- [ ] `vercel.json` with SPA rewrite: `{ "rewrites": [{ "source": "/(.*)", "destination": "/" }] }`.
-- [ ] `.env.example` with `VITE_FIREBASE_*` placeholders; `src/lib/firebase.ts` stub reads `import.meta.env`.
-- [ ] `README.md` with dev/build/deploy commands.
+- [x] `npm create vite@latest` with `react-ts` template, React 18.
+- [x] `tsconfig.json` with `"strict": true`, path alias `@/* → src/*`.
+- [x] Tailwind v3 installed; `tailwind.config.ts` mirrors every token from the [mapping table](#design-token-mapping).
+- [x] Inter font loaded via `@fontsource/inter` (not CDN — offline-friendly).
+- [x] `TabBar` component: 4 tabs with `lucide-react` icons (Home, Droplet, Dumbbell, Sparkles), glassmorphic (`backdrop-blur-xl bg-white/80`), safe-area padding, fixed to bottom.
+- [x] React Router v6 with routes `/`, `/water`, `/exercise`, `/myspace`. `NavLink` active state drives accent pill.
+- [x] Empty `Screen` placeholders rendered per route.
+- [x] `vite-plugin-pwa` installed and configured with `registerType: 'autoUpdate'`, basic manifest.
+- [x] iOS meta tags in `index.html` (`apple-mobile-web-app-capable`, `viewport-fit=cover`, `theme-color`).
+- [x] `vercel.json` with SPA rewrite and SW/FCM cache headers.
+- [x] `.env.example` with `VITE_FIREBASE_*` placeholders; `src/lib/firebase.ts` stub reads `import.meta.env`.
 
 ### Files to create
-`vite.config.ts`, `tailwind.config.ts`, `postcss.config.js`, `tsconfig.json`, `index.html`, `src/main.tsx`, `src/App.tsx`, `src/router.tsx`, `src/styles/globals.css`, `src/app/PhoneFrame.tsx`, `src/app/StatusBar.tsx`, `src/app/TabBar.tsx`, `src/lib/firebase.ts`, `vercel.json`, `.env.example`.
+`vite.config.ts`, `tailwind.config.ts`, `postcss.config.js`, `tsconfig.json`, `index.html`, `src/main.tsx`, `src/App.tsx`, `src/router.tsx`, `src/styles/globals.css`, `src/app/TabBar.tsx`, `src/lib/firebase.ts`, `vercel.json`, `.env.example`.
 
 ### Key decisions
+- **No phone frame.** The app is a proper responsive web app — mobile-first, `max-w-md` centered on desktop, full-width on phones. The prototype's phone chrome was a design mockup only.
+- **No fake StatusBar.** The browser/OS renders the real status bar. The app uses `env(safe-area-inset-*)` for notch-aware padding.
 - **No `localStorage` in Phase 1.** All state lives in Zustand; persistence arrives in Phase 6 via Firestore offline cache.
-- **Dark notch island** is pure CSS (`::before`) — do not import an SVG.
-- **Phone frame only shows on desktop.** Below 430px, frame collapses to edge-to-edge.
 - **Router over conditional rendering** so deep links work (`/water` installs as a shareable state).
 
 ---
@@ -275,7 +263,7 @@ Queries:
 - [ ] `WeeklyChart` (Recharts `BarChart`): three datasets (Water %, Exercise min, MySpace %) with custom legend, rounded bars, no y-axis, S/M/T/W/T/F/S x-axis.
 - [ ] `ProgressRings`: 4 concentric SVG rings (water, exercise, rituals, mood). Stroke-dasharray animated on mount via Framer Motion.
 - [ ] `CtaBanner`: accent-bg card, icon + heading + arrow, `onClick → navigate('/water')`.
-- [ ] Scroll container respects tab-bar height (`pb-[110px]`).
+- [ ] Scroll container respects tab-bar height (`pb-[82px]` — the fixed tab bar height).
 
 ### Files
 `src/screens/Dashboard/*`, `src/hooks/useGreeting.ts`.
