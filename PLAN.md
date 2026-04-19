@@ -249,29 +249,39 @@ Queries:
 
 ## Phase 2 — Dashboard Screen
 
-**Goal:** Pixel-match the prototype's Dashboard with mocked data. All static, no Firebase yet.
+**Goal:** Pixel-match the prototype's Dashboard. All data from mocks/stores — no hardcoded values in components. No Firebase yet.
+
+### Mock data rule (applies to ALL phases)
+> **Never write literal values inside components.** Every number, name, label, and quote must come from `src/mocks/` or a Zustand store in `src/stores/`. This keeps Phase 6 a clean swap: stores swap their `mockTodayLog` source for a `useDailyLog()` Firestore hook, component code is untouched.
+
+Data sources:
+- `src/types/models.ts` — `DailyLog`, `Streak`, `UserProfile`, `WeekDay` interfaces
+- `src/mocks/todayLog.ts` — today's water/exercise/rituals/mood
+- `src/mocks/weekLogs.ts` — last 7 days of chart data (computed from today with `date-fns`)
+- `src/mocks/user.ts` — display name, avatar initial, water goal
+- `src/mocks/quotes.ts` — 30-entry quotes array, rotated by day-of-year
+- `src/stores/useWaterStore.ts` — `{ glasses, goal }` + actions
+- `src/stores/useExerciseStore.ts` — `{ didWorkout, durationMin, intensity, ... }` + `setLog()`
+- `src/stores/useRitualsStore.ts` — `{ rituals, toggle(), completedCount() }`
+- `src/stores/useStreakStore.ts` — `{ count, best, lastCompletedDate, increment() }`
 
 ### Deliverables
-- [ ] `Greeting`: "Good morning/afternoon/evening, Nismal" + live date (`date-fns` `format(new Date(), 'EEEE, MMM d')`). Avatar chip right-aligned (initial "N" on accent circle).
-- [ ] `QuoteCard`: dark gradient (`bg-gradient-to-br from-ink to-[#333]`) with decorative blurred bubble, quote of the day (pick from a 30-entry array by day-of-year).
-- [ ] `StatGrid`: 2×2 grid, each card `relative overflow-hidden` with an absolutely-positioned 200px color orb (`blur-3xl opacity-60`):
-  - Water — coral orb
-  - Movement — lilac orb
-  - MySpace — accent orb
-  - Streak — amber orb
-  Each card shows label, big number, trend delta.
-- [ ] `WeeklyChart` (Recharts `BarChart`): three datasets (Water %, Exercise min, MySpace %) with custom legend, rounded bars, no y-axis, S/M/T/W/T/F/S x-axis.
-- [ ] `ProgressRings`: 4 concentric SVG rings (water, exercise, rituals, mood). Stroke-dasharray animated on mount via Framer Motion.
-- [ ] `CtaBanner`: accent-bg card, icon + heading + arrow, `onClick → navigate('/water')`.
-- [ ] Scroll container respects tab-bar height (`pb-[82px]` — the fixed tab bar height).
+- [x] `Greeting`: time-based ("Good morning/afternoon/evening") + user name from `mockUser.displayName` + live date string. Avatar from `mockUser.avatarInitial`.
+- [x] `QuoteCard`: dark gradient with decorative accent bubble; quote picked from `getDailyQuote()` (30-entry array, day-of-year rotation).
+- [x] `StatGrid`: 2×2 grid, each stat card reads from Zustand store — Water `glasses/goal`, Movement `durationMin`, My Space `ritualsCompleted/6`, Streak `count`. Trend copy is derived, not hardcoded.
+- [x] `WeeklyChart` (Recharts `BarChart`): three bars per day (`water`, `exerciseMin`, `ritualsCompleted`) from `mockWeekLogs`. Day labels are real last-7-day dates via `date-fns`. Custom legend.
+- [x] `ProgressRings`: 4 SVG rings computing pct from store values — waterPct, exercisePct (vs 30 min goal), ritualsPct, overallPct (average). Stroke-dasharray = `(pct/100) × 94.25`.
+- [x] `CtaBanner`: accent gradient; heading + subtext derived from `glassesLeft` and `streak`; "Open" button navigates to `/water`; shows completion state when goal hit.
+- [x] Types in `src/types/models.ts`.
 
-### Files
-`src/screens/Dashboard/*`, `src/hooks/useGreeting.ts`.
+### Files created
+`src/types/models.ts`, `src/mocks/user.ts`, `src/mocks/quotes.ts`, `src/mocks/todayLog.ts`, `src/mocks/weekLogs.ts`, `src/stores/useWaterStore.ts`, `src/stores/useExerciseStore.ts`, `src/stores/useRitualsStore.ts`, `src/stores/useStreakStore.ts`, `src/screens/Dashboard/index.tsx`.
 
 ### Key decisions
-- **Recharts Bar customization:** `radius={[8,8,0,0]}`, `background={{fill:'#f2efe9'}}`. Disable grid, keep tooltip.
-- **Rings:** one SVG with four `<circle>`s; animate `strokeDashoffset` with Framer Motion `animate` prop (`type: 'spring', stiffness: 60`).
-- Mock data lives in `src/screens/Dashboard/mockData.ts` so Phase 6 can swap to a `useDailyLog()` hook with one import change.
+- **Recharts over Chart.js**: `BarChart` with `radius={[4,4,0,0]}` on each `Bar`, no y-axis lines, responsive container.
+- **Rings via SVG stroke-dasharray**: circumference = 2π×15 = 94.25; `strokeDasharray="${dash} ${CIRC}"` where `dash = (pct/100) × CIRC`.
+- **No Framer Motion on rings yet** — animation deferred to Phase 8 polish pass.
+- **Week x-axis labels** use `format(date, 'EEE')` so they reflect the actual calendar days, not hard-coded Mon–Sun.
 
 ---
 
