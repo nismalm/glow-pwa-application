@@ -48,6 +48,7 @@ export default function WaterScreen() {
   }
 
   function isDone(dayOffset: number) {
+    if (dayOffset === 0) return glasses >= goal
     const idx = 6 + dayOffset
     return (mockWeekLogs[idx]?.water ?? 0) >= goal
   }

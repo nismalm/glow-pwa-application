@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { format, subDays } from 'date-fns'
 import { mockWeekLogs } from '@/mocks/weekLogs'
 import { EXERCISE_GOAL_MIN, INTENSITY_LEVELS } from '@/mocks/exerciseConfig'
+import { useExerciseStore } from '@/stores/useExerciseStore'
 import { WeekStrip } from '@/components/WeekStrip'
 import { WorkoutForm } from './WorkoutForm'
 import { ExerciseChart } from './ExerciseChart'
@@ -47,9 +48,11 @@ function PastDayView({ exerciseMin }: { exerciseMin: number }) {
 }
 
 export default function ExerciseScreen() {
+  const { didWorkout } = useExerciseStore()
   const [selectedOffset, setSelectedOffset] = useState(0)
 
   function isDone(dayOffset: number) {
+    if (dayOffset === 0) return didWorkout
     const idx = 6 + dayOffset
     return (mockWeekLogs[idx]?.exerciseMin ?? 0) >= EXERCISE_GOAL_MIN
   }

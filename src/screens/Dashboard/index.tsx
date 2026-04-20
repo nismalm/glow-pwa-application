@@ -59,6 +59,13 @@ export default function DashboardScreen() {
   const ritualsCompleted = completedCount()
   const glassesLeft = Math.max(0, goal - glasses)
 
+  // Replace today's slot (index 6) with live store values so chart stays accurate
+  const chartData = mockWeekLogs.map((entry, i) =>
+    i === 6
+      ? { ...entry, water: glasses, exerciseMin: didWorkout ? durationMin : 0, ritualsCompleted }
+      : entry,
+  )
+
   const waterPct = Math.round((glasses / goal) * 100)
   const exercisePct = didWorkout ? Math.round((durationMin / EXERCISE_GOAL_MIN) * 100) : 0
   const ritualsPct = Math.round((ritualsCompleted / TOTAL_RITUALS) * 100)
@@ -172,7 +179,7 @@ export default function DashboardScreen() {
         </div>
         <div className="h-[160px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={mockWeekLogs} barCategoryGap="30%" barGap={2}>
+            <BarChart data={chartData} barCategoryGap="30%" barGap={2}>
               <CartesianGrid vertical={false} stroke="#f0f0f0" />
               <XAxis
                 dataKey="day"

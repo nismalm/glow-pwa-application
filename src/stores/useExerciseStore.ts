@@ -10,7 +10,7 @@ type ExerciseState = ExerciseLog & {
 const initial: ExerciseLog = mockTodayLog.exercise ?? {
   didWorkout: false,
   types: [],
-  durationMin: 30,
+  durationMin: 0,
   intensity: 3 as 1 | 2 | 3 | 4 | 5,
   notes: '',
 }

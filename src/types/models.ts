@@ -41,3 +41,12 @@ export interface WeekDay {
   exerciseMin: number // minutes
   ritualsCompleted: number // count of rituals done
 }
+
+export interface Task {
+  id: string
+  title: string
+  dueAt: Date
+  color: 'coral' | 'lilac' | 'sky' | 'accent'
+  repeat: 'none' | 'daily' | 'weekly'
+  done: boolean
+}

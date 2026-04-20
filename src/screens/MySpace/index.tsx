@@ -1,9 +1,23 @@
+import { useState } from 'react'
+import { RitualsHeader } from './RitualsHeader'
+import { RitualsList } from './RitualsList'
+import { Calendar } from './Calendar'
+import { TaskList } from './TaskList'
+import { MoodPicker } from './MoodPicker'
+import { MoodChart } from './MoodChart'
+
 export default function MySpaceScreen() {
+  const [selectedDate, setSelectedDate] = useState(new Date())
+
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-3 pb-[110px]">
-      <div className="w-12 h-12 rounded-full bg-coral flex items-center justify-center text-2xl">✨</div>
-      <p className="text-ink font-semibold text-lg">My Space</p>
-      <p className="text-ink-soft text-sm">Coming in Phase 5</p>
+    <div className="flex flex-col px-4 pt-5 pb-[110px] min-h-full">
+      <h1 className="text-[22px] font-black tracking-tight text-ink mb-4">My Space ✨</h1>
+      <RitualsHeader />
+      <RitualsList />
+      <Calendar selectedDate={selectedDate} onDateSelect={setSelectedDate} />
+      <TaskList selectedDate={selectedDate} />
+      <MoodPicker />
+      <MoodChart />
     </div>
   )
 }

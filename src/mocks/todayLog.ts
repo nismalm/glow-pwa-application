@@ -5,23 +5,17 @@ import type { DailyLog } from '@/types/models'
 export const mockTodayLog: DailyLog = {
   date: format(new Date(), 'yyyy-MM-dd'),
   water: {
-    glasses: 2,
+    glasses: 0,
     goal: 10,
   },
-  exercise: {
-    didWorkout: true,
-    types: ['walk'],
-    durationMin: 25,
-    intensity: 3 as 1 | 2 | 3 | 4 | 5,
-    notes: '',
-  },
+  exercise: null,
   rituals: {
-    study: true,
-    read: true,
+    study: false,
+    read: false,
     meditate: false,
     gratitude: false,
     skincare: false,
     call: false,
   },
-  mood: 4,
+  mood: null,
 }
