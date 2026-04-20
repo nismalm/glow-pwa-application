@@ -11,9 +11,9 @@ const tabs = [
 export default function TabBar() {
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 max-w-md mx-auto flex items-center justify-around backdrop-blur-xl bg-white/80 border-t border-line z-50"
+      className="fixed bottom-0 left-0 right-0 max-w-md mx-auto flex items-stretch backdrop-blur-xl bg-white/80 border-t border-line z-50"
       style={{
-        height: 'calc(62px + env(safe-area-inset-bottom))',
+        height: 'calc(72px + env(safe-area-inset-bottom))',
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
@@ -23,7 +23,7 @@ export default function TabBar() {
           to={to}
           end={to === '/'}
           className={({ isActive }) =>
-            `flex flex-col items-center gap-0.5 px-4 py-1 rounded-2xl transition-all duration-200 ${
+            `flex-1 flex flex-col items-center justify-center gap-1 transition-colors duration-200 ${
               isActive ? 'text-ink' : 'text-ink-mute'
             }`
           }
@@ -31,13 +31,13 @@ export default function TabBar() {
           {({ isActive }) => (
             <>
               <div
-                className={`flex items-center justify-center w-10 h-7 rounded-full transition-all duration-200 ${
+                className={`flex items-center justify-center w-12 h-8 rounded-full transition-all duration-200 ${
                   isActive ? 'bg-accent' : 'bg-transparent'
                 }`}
               >
-                <Icon size={18} strokeWidth={isActive ? 2.5 : 1.8} />
+                <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} />
               </div>
-              <span className="text-[10px] font-medium leading-none">{label}</span>
+              <span className="text-[11px] font-medium leading-none">{label}</span>
             </>
           )}
         </NavLink>

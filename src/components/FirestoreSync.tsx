@@ -47,7 +47,7 @@ export default function FirestoreSync() {
             createdAt: serverTimestamp(),
             joinedDate,
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            waterGoal: 10,
+            waterGoal: 12,
             preferences: { reminders: false, theme: 'light' },
           }).catch(console.error)
           useWeightStore.getState().setJoinedDate(joinedDate)
@@ -73,7 +73,7 @@ export default function FirestoreSync() {
       const log = snap.data() as DailyLog
       useWaterStore.getState().hydrate({
         glasses: log.water?.glasses ?? 0,
-        goal: log.water?.goal ?? 10,
+        goal: log.water?.goal ?? 12,
       })
       useExerciseStore.getState().hydrate(log.exercise ?? null)
       useRitualsStore.getState().hydrate(today, log.rituals ?? DEFAULT_RITUALS)

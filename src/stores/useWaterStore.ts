@@ -12,7 +12,7 @@ interface WaterState {
 
 export const useWaterStore = create<WaterState>((set, get) => ({
   glasses: 0,
-  goal: 10,
+  goal: 12,
   hydrate: (data) => set(data),
   increment: () => {
     const { glasses, goal } = get()

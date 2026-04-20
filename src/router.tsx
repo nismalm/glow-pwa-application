@@ -14,7 +14,7 @@ import MySpaceScreen from '@/screens/MySpace'
 
 function LoadingScreen() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-bg">
+    <div className="flex items-center justify-center h-full bg-bg">
       <div className="w-10 h-10 rounded-full border-4 border-accent border-t-transparent animate-spin" />
     </div>
   )
@@ -72,9 +72,9 @@ export default function AppRouter() {
 
   // Fully ready — render the app
   return (
-    <div className="flex flex-col min-h-screen max-w-md mx-auto bg-bg relative">
+    <div className="flex flex-col h-full max-w-md mx-auto bg-bg relative overflow-hidden">
       <FirestoreSync />
-      <main className="flex-1 overflow-y-auto overflow-x-hidden pt-6 pb-[100px]">
+      <main className="flex-1 overflow-y-auto pt-6 pb-[116px]">
         <Routes>
           <Route path="/" element={<DashboardScreen />} />
           <Route path="/water" element={<WaterScreen />} />
