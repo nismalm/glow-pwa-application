@@ -43,13 +43,16 @@ function VerticalSlider({ value, max, onChange }: SliderProps) {
   }
 
   function onPointerDown(e: React.PointerEvent) {
+    e.preventDefault()
     dragging.current = true
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
     compute(e.clientY)
   }
 
   function onPointerMove(e: React.PointerEvent) {
-    if (dragging.current) compute(e.clientY)
+    if (!dragging.current) return
+    e.preventDefault()
+    compute(e.clientY)
   }
 
   function onPointerUp() {
@@ -61,7 +64,7 @@ function VerticalSlider({ value, max, onChange }: SliderProps) {
   return (
     <div
       ref={trackRef}
-      className="absolute right-1.5 top-1.5 bottom-1.5 w-2.5 bg-line rounded-full cursor-pointer select-none"
+      className="absolute right-1.5 top-1.5 bottom-1.5 w-2.5 bg-line rounded-full cursor-pointer select-none touch-none"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
