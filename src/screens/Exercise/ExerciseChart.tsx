@@ -2,15 +2,17 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { mockWeekLogs } from '@/mocks/weekLogs'
 import { useExerciseStore } from '@/stores/useExerciseStore'
+import type { WeekDay } from '@/types/models'
 
-export function ExerciseChart() {
+interface Props {
+  weekData: WeekDay[]
+}
+
+export function ExerciseChart({ weekData }: Props) {
   const { didWorkout, durationMin } = useExerciseStore()
 
-  // Today (index 6) always comes from the live store so the chart stays in sync with the form.
-  // Past days (index 0–5) come from mockWeekLogs (Phase 6: Firestore range query).
-  const data = mockWeekLogs.map((d, i) => ({
+  const data = weekData.map((d, i) => ({
     day: d.day,
     min: i === 6 ? (didWorkout ? durationMin : 0) : d.exerciseMin,
   }))

@@ -1,21 +1,25 @@
 import { create } from 'zustand'
-import { mockTodayLog } from '@/mocks/todayLog'
+import { writeDaily } from '@/lib/storeSync'
 import type { ExerciseLog } from '@/types/models'
 
-// Phase 6: swap mockTodayLog with useDailyLog(today).log.exercise
 type ExerciseState = ExerciseLog & {
+  hydrate: (log: ExerciseLog | null) => void
   setLog: (log: ExerciseLog) => void
 }
 
-const initial: ExerciseLog = mockTodayLog.exercise ?? {
+const defaults: ExerciseLog = {
   didWorkout: false,
   types: [],
   durationMin: 0,
-  intensity: 3 as 1 | 2 | 3 | 4 | 5,
+  intensity: 3,
   notes: '',
 }
 
 export const useExerciseStore = create<ExerciseState>((set) => ({
-  ...initial,
-  setLog: (log) => set(log),
+  ...defaults,
+  hydrate: (log) => set(log ?? defaults),
+  setLog: (log) => {
+    set(log)
+    writeDaily({ exercise: log })
+  },
 }))

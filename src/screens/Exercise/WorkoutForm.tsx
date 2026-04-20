@@ -9,7 +9,7 @@ import { IntensityPicker } from './IntensityPicker'
 
 const schema = z.object({
   didWorkout: z.boolean(),
-  types: z.array(z.enum(['walk', 'yoga', 'strength', 'run', 'dance', 'cycle'])).optional(),
+  types: z.array(z.enum(['walk', 'yoga', 'strength', 'run', 'dance', 'cycle', 'home'])).optional(),
   durationMin: z.number().min(5).max(180),
   intensity: z.number().int().min(1).max(5),
   notes: z.string().max(280).optional(),

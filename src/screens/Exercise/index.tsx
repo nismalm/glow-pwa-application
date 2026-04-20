@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { format, subDays } from 'date-fns'
-import { mockWeekLogs } from '@/mocks/weekLogs'
-import { EXERCISE_GOAL_MIN, INTENSITY_LEVELS } from '@/mocks/exerciseConfig'
+import { EXERCISE_GOAL_MIN, INTENSITY_LEVELS } from '@/lib/exerciseConfig'
 import { useExerciseStore } from '@/stores/useExerciseStore'
+import { useWeekData } from '@/hooks/useWeekData'
 import { WeekStrip } from '@/components/WeekStrip'
 import { WorkoutForm } from './WorkoutForm'
 import { ExerciseChart } from './ExerciseChart'
 
-// Past-day read-only summary — data comes from mockWeekLogs (Phase 6: from Firestore dailyLog)
-function PastDayView({ exerciseMin }: { exerciseMin: number }) {
+function PastDayView({ exerciseMin, intensity }: { exerciseMin: number; intensity: number | null }) {
   const didWorkout = exerciseMin > 0
-  const intensity = INTENSITY_LEVELS[2] // mock past intensity as 'Good' (index 2 = level 3)
+  const intensityLevel = intensity != null
+    ? INTENSITY_LEVELS.find((l) => l.v === intensity) ?? null
+    : null
 
   return (
     <div className="bg-card rounded-3xl p-5 shadow-card border border-black/[.03] mb-4">
@@ -26,13 +27,15 @@ function PastDayView({ exerciseMin }: { exerciseMin: number }) {
               <p className="text-[12px] text-ink-soft">{exerciseMin} minutes</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 p-3 bg-bg rounded-2xl">
-            <span className="text-2xl">{intensity.emoji}</span>
-            <div>
-              <p className="text-[13px] font-bold text-ink">Intensity</p>
-              <p className="text-[12px] text-ink-soft">{intensity.label}</p>
+          {intensityLevel && (
+            <div className="flex items-center gap-3 p-3 bg-bg rounded-2xl">
+              <span className="text-2xl">{intensityLevel.emoji}</span>
+              <div>
+                <p className="text-[13px] font-bold text-ink">Intensity</p>
+                <p className="text-[12px] text-ink-soft">{intensityLevel.label}</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       ) : (
         <div className="flex items-center gap-3 p-3 bg-bg rounded-2xl">
@@ -49,25 +52,20 @@ function PastDayView({ exerciseMin }: { exerciseMin: number }) {
 
 export default function ExerciseScreen() {
   const { didWorkout } = useExerciseStore()
+  const weekData = useWeekData()
   const [selectedOffset, setSelectedOffset] = useState(0)
 
   function isDone(dayOffset: number) {
     if (dayOffset === 0) return didWorkout
-    const idx = 6 + dayOffset
-    return (mockWeekLogs[idx]?.exerciseMin ?? 0) >= EXERCISE_GOAL_MIN
-  }
-
-  // offset -1 → mockWeekLogs[5], offset -6 → mockWeekLogs[0]
-  function exerciseMinForOffset(offset: number) {
-    const idx = 6 + offset
-    return mockWeekLogs[idx]?.exerciseMin ?? 0
+    return (weekData[6 + dayOffset]?.exerciseMin ?? 0) >= EXERCISE_GOAL_MIN
   }
 
   const isToday = selectedOffset === 0
   const selectedDate = format(subDays(new Date(), -selectedOffset), 'EEEE, MMM d')
+  const pastDay = weekData[6 + selectedOffset]
 
   return (
-    <div className="flex flex-col px-4 pt-5 pb-[110px] min-h-full">
+    <div className="flex flex-col px-4 pt-5 min-h-full">
       <h1 className="text-[22px] font-black tracking-tight text-ink mb-4">Exercise</h1>
 
       <WeekStrip
@@ -76,7 +74,6 @@ export default function ExerciseScreen() {
         onSelect={setSelectedOffset}
       />
 
-      {/* Day label when viewing history */}
       {!isToday && (
         <div className="flex items-center justify-between mb-3 px-1">
           <span className="text-[13px] font-semibold text-ink-soft">
@@ -91,14 +88,13 @@ export default function ExerciseScreen() {
         </div>
       )}
 
-      {/* Today: editable form. Past: read-only summary. */}
       {isToday
         ? <WorkoutForm />
-        : <PastDayView exerciseMin={exerciseMinForOffset(selectedOffset)} />
+        : <PastDayView exerciseMin={pastDay?.exerciseMin ?? 0} intensity={pastDay?.intensity ?? null} />
       }
 
       <div className="bg-card rounded-3xl p-5 shadow-card border border-black/[.03]">
-        <ExerciseChart />
+        <ExerciseChart weekData={weekData} />
       </div>
     </div>
   )

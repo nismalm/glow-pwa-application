@@ -1,20 +1,20 @@
-import { format } from 'date-fns'
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { mockPastMoodLogs } from '@/mocks/moodLogs'
+import { useWeekData } from '@/hooks/useWeekData'
 import { useMoodStore } from '@/stores/useMoodStore'
 
 const MOOD_EMOJI: Record<number, string> = { 1: '😔', 2: '😐', 3: '🙂', 4: '😊', 5: '😄' }
 
 export function MoodChart() {
   const mood = useMoodStore((s) => s.mood)
+  const weekData = useWeekData()
 
-  // Merge past 6 days with live today value so chart reflects current session
-  const chartData = [
-    ...mockPastMoodLogs,
-    { day: format(new Date(), 'EEE'), mood },
-  ]
+  // Use live store value for today (index 6) so chart reflects current session immediately
+  const chartData = weekData.map((d, i) => ({
+    day: d.day,
+    mood: i === 6 ? mood : d.mood,
+  }))
 
   return (
     <div className="bg-card rounded-3xl shadow-card border border-black/[.03] p-5 mb-4">

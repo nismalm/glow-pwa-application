@@ -5,11 +5,11 @@ import type { RitualId } from '@/types/models'
 
 const RITUALS: { id: RitualId; emoji: string; label: string }[] = [
   { id: 'meditate', emoji: '🧘', label: 'Meditate' },
-  { id: 'read', emoji: '📖', label: 'Read' },
-  { id: 'study', emoji: '📚', label: 'Study' },
+  { id: 'study', emoji: '📚', label: 'Learning' },
   { id: 'gratitude', emoji: '🙏', label: 'Gratitude' },
+  { id: 'read', emoji: '😌', label: 'Stay calm' },
   { id: 'skincare', emoji: '✨', label: 'Skincare' },
-  { id: 'call', emoji: '📞', label: 'Connect' },
+  { id: 'call', emoji: '👫', label: 'Connect with friends' },
 ]
 
 export function RitualsList() {

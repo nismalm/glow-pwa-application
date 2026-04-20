@@ -10,7 +10,7 @@ export default function MySpaceScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date())
 
   return (
-    <div className="flex flex-col px-4 pt-5 pb-[110px] min-h-full">
+    <div className="flex flex-col px-4 pt-5 min-h-full">
       <h1 className="text-[22px] font-black tracking-tight text-ink mb-4">My Space ✨</h1>
       <RitualsHeader />
       <RitualsList />

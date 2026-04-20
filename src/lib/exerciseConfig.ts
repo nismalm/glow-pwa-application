@@ -1,6 +1,3 @@
-// Phase 6: types and intensity levels are static UI config — no Firestore swap needed.
-// EXERCISE_GOAL_MIN could move to users/{uid}.preferences in Phase 6.
-
 export const WORKOUT_TYPES = [
   { id: 'walk', label: '🚶 Walk' },
   { id: 'yoga', label: '🧘 Yoga' },
@@ -8,6 +5,7 @@ export const WORKOUT_TYPES = [
   { id: 'run', label: '🏃 Run' },
   { id: 'dance', label: '🩰 Dance' },
   { id: 'cycle', label: '🚴 Cycle' },
+  { id: 'home', label: '🏠 Home workout' },
 ] as const
 
 export type WorkoutTypeId = (typeof WORKOUT_TYPES)[number]['id']

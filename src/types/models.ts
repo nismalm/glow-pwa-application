@@ -15,6 +15,15 @@ export interface ExerciseLog {
 export type RitualId = 'study' | 'read' | 'meditate' | 'gratitude' | 'skincare' | 'call'
 export type Rituals = Record<RitualId, boolean>
 
+export const DEFAULT_RITUALS: Rituals = {
+  study: false,
+  read: false,
+  meditate: false,
+  gratitude: false,
+  skincare: false,
+  call: false,
+}
+
 export interface DailyLog {
   date: string // yyyy-MM-dd
   water: WaterLog
@@ -40,6 +49,13 @@ export interface WeekDay {
   water: number // glasses
   exerciseMin: number // minutes
   ritualsCompleted: number // count of rituals done
+  mood: number | null
+  intensity: number | null
+}
+
+export interface WeightEntry {
+  date: string // yyyy-MM-dd
+  kg: number
 }
 
 export interface Task {
@@ -49,4 +65,15 @@ export interface Task {
   color: 'coral' | 'lilac' | 'sky' | 'accent'
   repeat: 'none' | 'daily' | 'weekly'
   done: boolean
+}
+
+export interface FirestoreUser {
+  displayName: string
+  photoURL: string | null
+  email: string | null
+  createdAt: unknown // Firestore Timestamp
+  timezone: string
+  waterGoal: number
+  fcmTokens: string[]
+  preferences: { reminders: boolean; theme: 'light' | 'dark' }
 }

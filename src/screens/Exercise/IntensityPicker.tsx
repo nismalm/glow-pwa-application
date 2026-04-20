@@ -1,4 +1,4 @@
-import { INTENSITY_LEVELS } from '@/mocks/exerciseConfig'
+import { INTENSITY_LEVELS } from '@/lib/exerciseConfig'
 
 interface Props {
   value: number

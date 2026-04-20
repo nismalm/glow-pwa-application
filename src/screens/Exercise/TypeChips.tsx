@@ -1,4 +1,4 @@
-import { WORKOUT_TYPES } from '@/mocks/exerciseConfig'
+import { WORKOUT_TYPES } from '@/lib/exerciseConfig'
 
 interface Props {
   value: string[]

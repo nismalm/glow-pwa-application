@@ -1,19 +1,37 @@
 import { create } from 'zustand'
-import { mockTodayLog } from '@/mocks/todayLog'
+import { writeDaily, notifyGoalHit } from '@/lib/storeSync'
 
-// Phase 6: swap mockTodayLog with useDailyLog(today).log.water
 interface WaterState {
   glasses: number
   goal: number
+  hydrate: (data: { glasses: number; goal: number }) => void
   increment: () => void
   decrement: () => void
   setGlasses: (n: number) => void
 }
 
-export const useWaterStore = create<WaterState>((set) => ({
-  glasses: mockTodayLog.water.glasses,
-  goal: mockTodayLog.water.goal,
-  increment: () => set((s) => ({ glasses: Math.min(20, s.glasses + 1) })),
-  decrement: () => set((s) => ({ glasses: Math.max(0, s.glasses - 1) })),
-  setGlasses: (n) => set({ glasses: Math.max(0, Math.min(20, n)) }),
+export const useWaterStore = create<WaterState>((set, get) => ({
+  glasses: 0,
+  goal: 10,
+  hydrate: (data) => set(data),
+  increment: () => {
+    const { glasses, goal } = get()
+    const next = Math.min(20, glasses + 1)
+    set({ glasses: next })
+    writeDaily({ water: { glasses: next, goal } })
+    if (next === goal) notifyGoalHit()
+  },
+  decrement: () => {
+    const { glasses, goal } = get()
+    const next = Math.max(0, glasses - 1)
+    set({ glasses: next })
+    writeDaily({ water: { glasses: next, goal } })
+  },
+  setGlasses: (n) => {
+    const { goal } = get()
+    const clamped = Math.max(0, Math.min(20, n))
+    set({ glasses: clamped })
+    writeDaily({ water: { glasses: clamped, goal } })
+    if (clamped === goal) notifyGoalHit()
+  },
 }))

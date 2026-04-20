@@ -2,30 +2,21 @@ import { useEffect, useRef, useState } from 'react'
 import { format, subDays } from 'date-fns'
 import { useWaterStore } from '@/stores/useWaterStore'
 import { useStreakStore } from '@/stores/useStreakStore'
-import { mockWeekLogs } from '@/mocks/weekLogs'
+import { useWeekData } from '@/hooks/useWeekData'
 import { WeekStrip } from '@/components/WeekStrip'
 import { WaterHero } from './WaterHero'
 import { useHaptic } from '@/hooks/useHaptic'
-
-// Returns the water glasses for a given day offset (0 = today from store, negative = from mock history).
-function useWaterForOffset(offset: number, todayGlasses: number, goal: number) {
-  if (offset === 0) return { glasses: todayGlasses, goal, readOnly: false }
-  // offset -1 → mockWeekLogs[5], offset -6 → mockWeekLogs[0]
-  const idx = 6 + offset
-  const glasses = mockWeekLogs[idx]?.water ?? 0
-  return { glasses, goal, readOnly: true }
-}
 
 export default function WaterScreen() {
   const { glasses, goal, increment, decrement, setGlasses } = useWaterStore()
   const streak = useStreakStore()
   const haptic = useHaptic()
+  const weekData = useWeekData()
 
   const [selectedOffset, setSelectedOffset] = useState(0)
   const [showConfetti, setShowConfetti] = useState(false)
   const prevGlassesRef = useRef(glasses)
 
-  // Only trigger confetti when on today's view and goal is freshly hit
   useEffect(() => {
     if (selectedOffset !== 0) return
     const prev = prevGlassesRef.current
@@ -49,11 +40,12 @@ export default function WaterScreen() {
 
   function isDone(dayOffset: number) {
     if (dayOffset === 0) return glasses >= goal
-    const idx = 6 + dayOffset
-    return (mockWeekLogs[idx]?.water ?? 0) >= goal
+    return (weekData[6 + dayOffset]?.water ?? 0) >= goal
   }
 
-  const { glasses: displayGlasses, readOnly } = useWaterForOffset(selectedOffset, glasses, goal)
+  const displayGlasses =
+    selectedOffset === 0 ? glasses : (weekData[6 + selectedOffset]?.water ?? 0)
+  const readOnly = selectedOffset !== 0
 
   const selectedDate =
     selectedOffset === 0
@@ -61,7 +53,7 @@ export default function WaterScreen() {
       : format(subDays(new Date(), -selectedOffset), 'EEEE, MMM d')
 
   return (
-    <div className="flex flex-col px-4 pt-5 pb-[110px] min-h-full">
+    <div className="flex flex-col px-4 pt-5 min-h-full">
       <h1 className="text-[22px] font-black tracking-tight text-ink mb-4">Stay Hydrated</h1>
 
       <WeekStrip
@@ -70,7 +62,6 @@ export default function WaterScreen() {
         onSelect={setSelectedOffset}
       />
 
-      {/* day label when viewing history */}
       {selectedOffset !== 0 && (
         <div className="flex items-center justify-between mb-2 px-1">
           <span className="text-[13px] font-semibold text-ink-soft">
@@ -93,7 +84,6 @@ export default function WaterScreen() {
         readOnly={readOnly}
       />
 
-      {/* action buttons — only on today's view */}
       {!readOnly && (
         <div className="flex gap-2.5 mb-3.5">
           <button
@@ -115,7 +105,6 @@ export default function WaterScreen() {
         </div>
       )}
 
-      {/* daily goal card */}
       <div className="bg-card rounded-3xl p-5 shadow-card border border-black/[.03]">
         <div className="flex justify-between items-center">
           <div>

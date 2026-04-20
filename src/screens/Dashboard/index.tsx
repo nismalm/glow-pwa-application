@@ -12,9 +12,10 @@ import { useWaterStore } from '@/stores/useWaterStore'
 import { useExerciseStore } from '@/stores/useExerciseStore'
 import { useRitualsStore } from '@/stores/useRitualsStore'
 import { useStreakStore } from '@/stores/useStreakStore'
-import { mockWeekLogs } from '@/mocks/weekLogs'
-import { mockUser } from '@/mocks/user'
+import { useAuthStore } from '@/stores/useAuthStore'
+import { useWeekData } from '@/hooks/useWeekData'
 import { getDailyQuote } from '@/mocks/quotes'
+import { WeightSection } from './WeightSection'
 
 const TOTAL_RITUALS = 6
 const EXERCISE_GOAL_MIN = 30
@@ -55,12 +56,16 @@ export default function DashboardScreen() {
   const { durationMin, didWorkout } = useExerciseStore()
   const { completedCount } = useRitualsStore()
   const { count: streak, best: bestStreak } = useStreakStore()
+  const displayName = useAuthStore((s) => s.displayName)
+  const avatarInitial = useAuthStore((s) => s.avatarInitial)
+  const logout = useAuthStore((s) => s.logout)
+  const weekLogs = useWeekData()
 
   const ritualsCompleted = completedCount()
   const glassesLeft = Math.max(0, goal - glasses)
 
   // Replace today's slot (index 6) with live store values so chart stays accurate
-  const chartData = mockWeekLogs.map((entry, i) =>
+  const chartData = weekLogs.map((entry, i) =>
     i === 6
       ? { ...entry, water: glasses, exerciseMin: didWorkout ? durationMin : 0, ritualsCompleted }
       : entry,
@@ -128,15 +133,23 @@ export default function DashboardScreen() {
               {greeting}
             </p>
             <h1 className="text-[28px] font-black tracking-tight mt-1.5 mb-1 leading-tight">
-              Hi, {mockUser.displayName} <span className="text-[22px]">✨</span>
+              Hi, {displayName} <span className="text-[22px]">✨</span>
             </h1>
             <p className="text-[14px] text-ink-soft">{dateStr}</p>
           </div>
-          <div
-            className="w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center font-black text-base shadow-card"
-            style={{ background: 'linear-gradient(135deg, #ffd3c9, #ffb0a0)', color: '#7a2e21' }}
-          >
-            {mockUser.avatarInitial}
+          <div className="flex flex-col items-center gap-1.5">
+            <div
+              className="w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center font-black text-base shadow-card"
+              style={{ background: 'linear-gradient(135deg, #ffd3c9, #ffb0a0)', color: '#7a2e21' }}
+            >
+              {avatarInitial}
+            </div>
+            <button
+              onClick={logout}
+              className="text-[10px] font-semibold text-ink-mute active:text-coral transition-colors"
+            >
+              Logout
+            </button>
           </div>
         </div>
       </div>
@@ -207,6 +220,8 @@ export default function DashboardScreen() {
           ))}
         </div>
       </div>
+
+      <WeightSection />
 
       {/* Today's rings */}
       <div className="bg-card rounded-[22px] p-[18px] shadow-card border border-black/[0.03] mb-3.5">
