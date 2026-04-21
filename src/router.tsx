@@ -1,12 +1,11 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
-import { signInAnon, signOutUser } from '@/lib/auth'
+import { signInGoogle } from '@/lib/auth'
 import { useAuthStore } from '@/stores/useAuthStore'
 import TabBar from '@/app/TabBar'
 import FirestoreSync from '@/components/FirestoreSync'
-import OnboardingScreen from '@/components/OnboardingScreen'
 import DashboardScreen from '@/screens/Dashboard'
 import WaterScreen from '@/screens/Water'
 import ExerciseScreen from '@/screens/Exercise'
@@ -20,57 +19,58 @@ function LoadingScreen() {
   )
 }
 
+function SignInScreen() {
+  return (
+    <div className="min-h-screen bg-bg flex flex-col items-center justify-center px-6">
+      <div className="text-center mb-10">
+        <div
+          className="w-16 h-16 rounded-[20px] mx-auto mb-5 flex items-center justify-center text-3xl shadow-card"
+          style={{ background: 'linear-gradient(135deg, #cdde3f 0%, #a8b92f 100%)' }}
+        >
+          ✨
+        </div>
+        <h1 className="text-[38px] font-black tracking-tight text-ink leading-none">Glow</h1>
+        <p className="text-ink-soft text-[15px] mt-2">Your daily progress, beautifully.</p>
+      </div>
+
+      <div className="w-full max-w-sm bg-card rounded-[24px] p-6 shadow-card border border-black/[0.04]">
+        <h2 className="text-[18px] font-black text-ink mb-1">Welcome 👋</h2>
+        <p className="text-[13px] text-ink-soft mb-6">Sign in to access your personal dashboard.</p>
+
+        <button
+          onClick={() => signInGoogle().catch(console.error)}
+          className="w-full flex items-center justify-center gap-3 py-3.5 rounded-[14px] border border-line bg-bg text-ink font-bold text-[15px] active:scale-[0.98] transition-transform"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Continue with Google
+        </button>
+      </div>
+
+      <p className="text-[11px] text-ink-mute mt-6 text-center max-w-xs">
+        Your data is stored privately and only accessible to you.
+      </p>
+    </div>
+  )
+}
+
 export default function AppRouter() {
-  const onboarded = useAuthStore((s) => s.onboarded)
   const user = useAuthStore((s) => s.user)
   const loading = useAuthStore((s) => s.loading)
 
-  // Firebase anonymous auth — starts immediately so auth is ready before the form is submitted.
   useEffect(() => {
     return onAuthStateChanged(auth, (firebaseUser) => {
-      if (!firebaseUser) {
-        signInAnon().catch((err) => {
-          console.error('Sign-in failed:', err)
-          useAuthStore.getState().setLoading(false)
-        })
-        return
-      }
       useAuthStore.getState().setUser(firebaseUser)
     })
   }, [])
 
-  // When the user logs out (onboarded flips false), sign out of Firebase so any
-  // live onSnapshot listeners terminate cleanly, then sign in a fresh anonymous
-  // user so the next Firestore read (getDoc in OnboardingScreen.lookup) has
-  // valid auth. Without this, Firestore's offline persistence can enter an
-  // error state after the permission-denied from the lingering listeners, and
-  // subsequent reads hang — leaving the "Get Started" button stuck on "Checking…".
-  const prevOnboarded = useRef(onboarded)
-  useEffect(() => {
-    const wasOnboarded = prevOnboarded.current
-    prevOnboarded.current = onboarded
+  if (loading) return <LoadingScreen />
+  if (!user) return <SignInScreen />
 
-    if (wasOnboarded && !onboarded) {
-      // Logout transition: tear down auth, then bring a fresh anon session up.
-      // onAuthStateChanged above will observe the signOut (firebaseUser=null)
-      // and kick off signInAnon on its own, so we only need to signOut here.
-      signOutUser().catch((err) => {
-        console.warn('signOut on logout failed:', err)
-      })
-    }
-  }, [onboarded])
-
-  // Step 1 — must complete onboarding
-  if (!onboarded) {
-    return <OnboardingScreen />
-  }
-
-  // Step 2 — wait for Firebase (usually already done by step 1)
-  if (loading || !user) {
-    return <LoadingScreen />
-  }
-
-  // Fully ready — render the app
   return (
     <div className="flex flex-col h-full max-w-md mx-auto bg-bg relative overflow-hidden">
       <FirestoreSync />

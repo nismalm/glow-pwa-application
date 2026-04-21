@@ -6,6 +6,7 @@ export const WORKOUT_TYPES = [
   { id: 'dance', label: '🩰 Dance' },
   { id: 'cycle', label: '🚴 Cycle' },
   { id: 'home', label: '🏠 Home workout' },
+  { id: 'crossfit', label: '🏋️ Crossfit' },
 ] as const
 
 export type WorkoutTypeId = (typeof WORKOUT_TYPES)[number]['id']

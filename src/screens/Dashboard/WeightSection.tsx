@@ -7,7 +7,6 @@ import { useWeightStore } from '@/stores/useWeightStore'
 
 export function WeightSection() {
   const entries = useWeightStore((s) => s.entries)
-  const isWeighInDay = useWeightStore((s) => s.isWeighInDay)
   const todayEntry = useWeightStore((s) => s.todayEntry)
   const logWeight = useWeightStore((s) => s.logWeight)
 
@@ -47,8 +46,8 @@ export function WeightSection() {
             <span className="text-xl">🏋️</span>
             <h3 className="text-[15px] font-bold text-ink">Time to weigh in!</h3>
           </div>
-          <p className="text-[12px] text-ink-soft mb-4">
-            Log your weight to track your progress over time.
+          <p className="text-[12px] text-ink-soft mb-3">
+            Log your weight anytime — though logging every 7 days is where the real trends show up.
           </p>
           <div className="flex gap-2.5 items-start">
             <div className="flex-1">
