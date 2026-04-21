@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { onAuthStateChanged } from 'firebase/auth'
+import { toast } from 'sonner'
 import { auth } from '@/lib/firebase'
 import { signInGoogle, consumeRedirectResult } from '@/lib/auth'
 import { useAuthStore } from '@/stores/useAuthStore'
@@ -26,23 +27,32 @@ function SignInScreen() {
   const handleSignIn = async () => {
     setSigningIn(true)
     setError(null)
+    toast.info('Starting Google sign-in…')
     try {
       await signInGoogle()
-      // On iOS, signInWithRedirect navigates away — execution never reaches here.
-      // On desktop, signInWithPopup resolves here and onAuthStateChanged handles the rest.
+      // On iOS signInWithRedirect navigates away — execution never reaches here.
+      // On desktop signInWithPopup resolves here and onAuthStateChanged handles the rest.
+      toast.success('Signed in! Loading your data…')
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code ?? ''
+      const message = (err as Error)?.message ?? ''
+
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-        // user dismissed — no error needed
+        toast.info('Sign-in cancelled.')
       } else if (code === 'auth/unauthorized-domain') {
-        setError('This domain is not authorised in Firebase. Add it under Authentication → Settings → Authorized Domains.')
+        const msg = 'Domain not authorised in Firebase. Add it under Authentication → Settings → Authorized Domains.'
+        setError(msg)
+        toast.error(msg)
       } else if (code === 'auth/popup-blocked') {
-        setError('Popup was blocked by your browser. Allow popups for this site and try again.')
+        const msg = 'Popup blocked. Allow popups for this site and try again.'
+        setError(msg)
+        toast.error(msg)
       } else {
-        setError((err as Error)?.message ?? 'Sign-in failed. Please try again.')
+        const msg = message || 'Sign-in failed. Please try again.'
+        setError(msg)
+        toast.error(`Sign-in error [${code || 'unknown'}]: ${msg}`)
       }
       setSigningIn(false)
-      // On iOS redirect path setSigningIn stays true — the page navigates away anyway.
     }
   }
 
@@ -101,21 +111,37 @@ export default function AppRouter() {
     let unsub: (() => void) | undefined
     let cancelled = false
 
+    toast.info('Checking auth state…', { id: 'auth-init', duration: 10000 })
+
     // Await the redirect result before subscribing to onAuthStateChanged.
     // Without this, onAuthStateChanged fires immediately with null (no user
     // cached yet), loading flips to false, and the login screen renders before
     // Firebase has processed the OAuth return — causing the iOS bounce.
     consumeRedirectResult()
-      .catch((err: { code?: string }) => {
-        // auth/no-auth-event = nothing pending, safe to ignore.
-        // Log everything else for debugging iOS auth failures.
-        if (err?.code !== 'auth/no-auth-event') {
-          console.warn('[auth] redirect result error:', err?.code ?? err)
+      .then((result) => {
+        if (result?.user) {
+          toast.success(`Redirect sign-in OK — ${result.user.email}`, { id: 'auth-init' })
+        } else {
+          toast.info('No pending redirect.', { id: 'auth-init', duration: 3000 })
+        }
+      })
+      .catch((err: { code?: string; message?: string }) => {
+        const code = err?.code ?? 'unknown'
+        // auth/no-auth-event = nothing pending, safe to ignore silently.
+        if (code === 'auth/no-auth-event') {
+          toast.dismiss('auth-init')
+        } else {
+          toast.error(`Redirect error [${code}]: ${err?.message ?? ''}`, { id: 'auth-init', duration: 10000 })
         }
       })
       .finally(() => {
         if (cancelled) return
         unsub = onAuthStateChanged(auth, (firebaseUser) => {
+          if (firebaseUser) {
+            toast.success(`Auth OK — uid: ${firebaseUser.uid.slice(0, 8)}…`, { duration: 4000 })
+          } else {
+            toast.info('No authenticated user.', { duration: 3000 })
+          }
           useAuthStore.getState().setUser(firebaseUser)
         })
       })
