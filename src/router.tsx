@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
-import { signInGoogle } from '@/lib/auth'
+import { signInGoogle, consumeRedirectResult } from '@/lib/auth'
 import { useAuthStore } from '@/stores/useAuthStore'
 import TabBar from '@/app/TabBar'
 import FirestoreSync from '@/components/FirestoreSync'
@@ -28,6 +28,8 @@ function SignInScreen() {
     setError(null)
     try {
       await signInGoogle()
+      // On iOS, signInWithRedirect navigates away — execution never reaches here.
+      // On desktop, signInWithPopup resolves here and onAuthStateChanged handles the rest.
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code ?? ''
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
@@ -35,12 +37,12 @@ function SignInScreen() {
       } else if (code === 'auth/unauthorized-domain') {
         setError('This domain is not authorised in Firebase. Add it under Authentication → Settings → Authorized Domains.')
       } else if (code === 'auth/popup-blocked') {
-        setError('Popup was blocked by your browser. Please allow popups for this site and try again.')
+        setError('Popup was blocked by your browser. Allow popups for this site and try again.')
       } else {
         setError((err as Error)?.message ?? 'Sign-in failed. Please try again.')
       }
-    } finally {
       setSigningIn(false)
+      // On iOS redirect path setSigningIn stays true — the page navigates away anyway.
     }
   }
 
@@ -96,6 +98,13 @@ export default function AppRouter() {
   const loading = useAuthStore((s) => s.loading)
 
   useEffect(() => {
+    // consumeRedirectResult processes any pending iOS redirect sign-in.
+    // It must be called before onAuthStateChanged so the auth state is
+    // resolved before we decide whether to show the sign-in screen.
+    consumeRedirectResult().catch(() => {
+      // No pending redirect or user dismissed — not an error.
+    })
+
     return onAuthStateChanged(auth, (firebaseUser) => {
       useAuthStore.getState().setUser(firebaseUser)
     })
