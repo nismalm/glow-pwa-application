@@ -3,13 +3,16 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useExerciseStore } from '@/stores/useExerciseStore'
 import { useHaptic } from '@/hooks/useHaptic'
+import { WORKOUT_TYPES } from '@/lib/exerciseConfig'
 import { TypeChips } from './TypeChips'
 import { DurationSlider } from './DurationSlider'
 import { IntensityPicker } from './IntensityPicker'
 
+const workoutTypeIds = WORKOUT_TYPES.map((t) => t.id) as [string, ...string[]]
+
 const schema = z.object({
   didWorkout: z.boolean(),
-  types: z.array(z.enum(['walk', 'yoga', 'strength', 'run', 'dance', 'cycle', 'home'])).optional(),
+  types: z.array(z.enum(workoutTypeIds as [string, ...string[]])).optional(),
   durationMin: z.number().min(5).max(180),
   intensity: z.number().int().min(1).max(5),
   notes: z.string().max(280).optional(),
