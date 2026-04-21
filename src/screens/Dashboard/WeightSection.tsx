@@ -14,10 +14,9 @@ export function WeightSection() {
   const [kg, setKg] = useState('')
   const [error, setError] = useState('')
 
-  const showPrompt = isWeighInDay() && !todayEntry()
+  const alreadyLoggedToday = !!todayEntry()
+  const showPrompt = !alreadyLoggedToday
   const hasHistory = entries.length > 0
-
-  if (!showPrompt && !hasHistory) return null
 
   function handleSave() {
     const value = parseFloat(kg)
@@ -49,7 +48,7 @@ export function WeightSection() {
             <h3 className="text-[15px] font-bold text-ink">Time to weigh in!</h3>
           </div>
           <p className="text-[12px] text-ink-soft mb-4">
-            Every 7 days — track your progress consistently.
+            Log your weight to track your progress over time.
           </p>
           <div className="flex gap-2.5 items-start">
             <div className="flex-1">
