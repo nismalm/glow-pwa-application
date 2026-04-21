@@ -7,9 +7,18 @@ import {
 } from 'firebase/auth'
 import { initializeFirestore, persistentLocalCache } from 'firebase/firestore'
 
+// On deployed environments, use the current hostname as authDomain so Firebase's
+// /__/auth/iframe is same-origin — iOS Safari ITP blocks cross-origin iframe
+// storage, causing getRedirectResult to always return null otherwise.
+// vercel.json proxies /__/auth/* to firebaseapp.com transparently.
+const authDomain =
+  window.location.hostname === 'localhost'
+    ? import.meta.env.VITE_FIREBASE_AUTH_DOMAIN
+    : window.location.hostname
+
 const config = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  authDomain,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
