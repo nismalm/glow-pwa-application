@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/__/auth/:path*",
+      "destination": "https://glow-progress-tracker.firebaseapp.com/__/auth/:path*"
+    },
+    {
+      "source": "/__/firebase/:path*",
+      "destination": "https://glow-progress-tracker.firebaseapp.com/__/firebase/:path*"
+    },
+    {
       "source": "/((?!firebase-messaging-sw.js|sw.js|manifest.webmanifest|icons/.*|splash/.*).*)",
       "destination": "/"
     }
