@@ -4,38 +4,34 @@ import {
   signInWithRedirect,
   getRedirectResult,
   GoogleAuthProvider,
+  browserPopupRedirectResolver,
   signOut as firebaseSignOut,
 } from 'firebase/auth'
 import { auth } from './firebase'
 
 const googleProvider = new GoogleAuthProvider()
+googleProvider.setCustomParameters({ prompt: 'select_account' })
 
 const isIOS =
   /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 
-// navigator.standalone is iOS-only; display-mode covers Android and desktop PWAs.
-const isStandalonePWA =
-  (navigator as { standalone?: boolean }).standalone === true ||
-  window.matchMedia('(display-mode: standalone)').matches
+// All iOS browsers (Safari, Chrome-on-iOS = WKWebView, in-app browsers, and
+// standalone PWA) sever window.opener via COOP, so popup's postMessage never
+// arrives. signInWithRedirect is the only reliable path on any iOS context.
+// Desktop (Mac/Windows/Linux) handles popup correctly.
+const shouldUseRedirect = isIOS
 
 export const signInAnon = () => signInAnonymously(auth)
 
-// iOS PWA (standalone): signInWithRedirect leaves the WKWebView context — the
-// redirect lands in Safari whose storage is isolated from the PWA, so the app
-// never sees the auth state. signInWithPopup opens an in-app SFSafariViewController
-// (iOS 16.4+) that stays in context and posts the result back correctly.
-//
-// iOS browser (non-standalone): signInWithRedirect is more reliable because
-// window.open() on iOS Safari does not preserve window.opener across new tabs,
-// so signInWithPopup's postMessage never arrives.
-//
-// Desktop: signInWithPopup is always fine.
 export const signInGoogle = () =>
-  isIOS && !isStandalonePWA
-    ? signInWithRedirect(auth, googleProvider)
-    : signInWithPopup(auth, googleProvider)
+  shouldUseRedirect
+    ? signInWithRedirect(auth, googleProvider, browserPopupRedirectResolver)
+    : signInWithPopup(auth, googleProvider, browserPopupRedirectResolver)
 
-export const consumeRedirectResult = () => getRedirectResult(auth)
+// Explicit resolver avoids lazy-loading, which prevents the undefined.payload
+// error inside Firebase's core.js on iOS redirect returns.
+export const consumeRedirectResult = () =>
+  getRedirectResult(auth, browserPopupRedirectResolver)
 
 export const signOutUser = () => firebaseSignOut(auth)

@@ -27,9 +27,14 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        // Exclude Firebase API calls from precache — Firestore handles its own offline cache
-        navigateFallback: '/',
-        navigateFallbackDenylist: [/^\/api\//],
+        // Must match the actual precached file name — vite-plugin-pwa stores it
+        // as index.html, not "/", so navigateFallback: '/' causes non-precached-url.
+        navigateFallback: 'index.html',
+        navigateFallbackDenylist: [
+          /^\/api\//,
+          /^\/__\/auth\//,      // Firebase redirect handler — must not be intercepted
+          /^\/__\/firebase\//,  // Firebase hosting reserved paths
+        ],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
@@ -37,8 +42,13 @@ export default defineConfig({
             options: { cacheName: 'gfonts-webfonts' },
           },
           {
-            // Firebase remote config / auth endpoints — network only, no SW interference
-            urlPattern: /^https:\/\/(firestore|firebase|identitytoolkit)\.googleapis\.com\/.*/i,
+            // Firebase endpoints — network only, no SW interference
+            urlPattern: /^https:\/\/(firestore|firebase|identitytoolkit|securetoken)\.googleapis\.com\/.*/i,
+            handler: 'NetworkOnly',
+          },
+          {
+            // Firebase auth handler on the authDomain — never cache, never intercept
+            urlPattern: /^https:\/\/[a-z0-9-]+\.firebaseapp\.com\/__\/auth\/.*/i,
             handler: 'NetworkOnly',
           },
         ],

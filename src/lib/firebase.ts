@@ -1,5 +1,10 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth } from 'firebase/auth'
+import {
+  initializeAuth,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
+  browserPopupRedirectResolver,
+} from 'firebase/auth'
 import { initializeFirestore, persistentLocalCache } from 'firebase/firestore'
 
 const config = {
@@ -12,7 +17,14 @@ const config = {
 }
 
 export const app = initializeApp(config)
-export const auth = getAuth(app)
+
+// indexedDB first — survives iOS Safari ITP and PWA relaunch better than localStorage.
+// Explicit resolver prevents the lazy-load path that triggers payload errors on iOS.
+export const auth = initializeAuth(app, {
+  persistence: [indexedDBLocalPersistence, browserLocalPersistence],
+  popupRedirectResolver: browserPopupRedirectResolver,
+})
+
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache(),
 })

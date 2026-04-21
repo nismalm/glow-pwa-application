@@ -98,16 +98,32 @@ export default function AppRouter() {
   const loading = useAuthStore((s) => s.loading)
 
   useEffect(() => {
-    // consumeRedirectResult processes any pending iOS redirect sign-in.
-    // It must be called before onAuthStateChanged so the auth state is
-    // resolved before we decide whether to show the sign-in screen.
-    consumeRedirectResult().catch(() => {
-      // No pending redirect or user dismissed — not an error.
-    })
+    let unsub: (() => void) | undefined
+    let cancelled = false
 
-    return onAuthStateChanged(auth, (firebaseUser) => {
-      useAuthStore.getState().setUser(firebaseUser)
-    })
+    // Await the redirect result before subscribing to onAuthStateChanged.
+    // Without this, onAuthStateChanged fires immediately with null (no user
+    // cached yet), loading flips to false, and the login screen renders before
+    // Firebase has processed the OAuth return — causing the iOS bounce.
+    consumeRedirectResult()
+      .catch((err: { code?: string }) => {
+        // auth/no-auth-event = nothing pending, safe to ignore.
+        // Log everything else for debugging iOS auth failures.
+        if (err?.code !== 'auth/no-auth-event') {
+          console.warn('[auth] redirect result error:', err?.code ?? err)
+        }
+      })
+      .finally(() => {
+        if (cancelled) return
+        unsub = onAuthStateChanged(auth, (firebaseUser) => {
+          useAuthStore.getState().setUser(firebaseUser)
+        })
+      })
+
+    return () => {
+      cancelled = true
+      unsub?.()
+    }
   }, [])
 
   if (loading) return <LoadingScreen />
