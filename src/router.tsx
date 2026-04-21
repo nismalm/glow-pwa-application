@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
-import { signInGoogle, handleRedirectResult } from '@/lib/auth'
+import { signInGoogle } from '@/lib/auth'
 import { useAuthStore } from '@/stores/useAuthStore'
 import TabBar from '@/app/TabBar'
 import FirestoreSync from '@/components/FirestoreSync'
@@ -63,7 +63,6 @@ export default function AppRouter() {
   const loading = useAuthStore((s) => s.loading)
 
   useEffect(() => {
-    handleRedirectResult().catch(console.error)
     return onAuthStateChanged(auth, (firebaseUser) => {
       useAuthStore.getState().setUser(firebaseUser)
     })
