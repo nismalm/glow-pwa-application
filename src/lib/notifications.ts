@@ -16,11 +16,14 @@ export async function getFCMToken(): Promise<string | null> {
     if (!messaging) return null
     const granted = await requestNotificationPermission()
     if (!granted) return null
-    return await getToken(messaging, {
-      vapidKey: VAPID_KEY,
-      serviceWorkerRegistration: await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js'),
+    // Explicitly register at a dedicated scope so it never conflicts with
+    // VitePWA's service worker which also controls '/'.
+    const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+      scope: '/firebase-cloud-messaging-push-scope',
     })
-  } catch {
+    return await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg })
+  } catch (e) {
+    console.error('[FCM] getToken failed:', e)
     return null
   }
 }

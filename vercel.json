@@ -17,7 +17,7 @@
     {
       "source": "/firebase-messaging-sw.js",
       "headers": [
-        { "key": "Service-Worker-Allowed", "value": "/" },
+        { "key": "Service-Worker-Allowed", "value": "/firebase-cloud-messaging-push-scope" },
         { "key": "Cache-Control", "value": "no-cache" }
       ]
     },
