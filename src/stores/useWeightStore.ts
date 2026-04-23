@@ -6,6 +6,7 @@ import type { WeightEntry } from '@/types/models'
 
 interface WeightState {
   entries: WeightEntry[]
+  loaded: boolean
   joinedDate: string | null
   setJoinedDate: (d: string) => void
   hydrateEntries: (entries: WeightEntry[]) => void
@@ -16,11 +17,14 @@ interface WeightState {
 
 export const useWeightStore = create<WeightState>((set, get) => ({
   entries: [],
+  loaded: false,
   joinedDate: null,
 
   setJoinedDate: (joinedDate) => set({ joinedDate }),
 
-  hydrateEntries: (entries) => set({ entries }),
+  // `loaded: true` flips on first snapshot so the UI can avoid flashing the
+  // prompt / hiding the chart before Firestore has responded.
+  hydrateEntries: (entries) => set({ entries, loaded: true }),
 
   logWeight: (kg) => {
     // Optimistic update keyed by date: replace any existing entry for today,

@@ -21,7 +21,13 @@ service cloud.firestore {
       }
 
       match /weights/{date} {
-        allow read, write: if request.auth != null
+        // Read (get + list): no path-var constraint. A constraint on {date}
+        // blocks unfiltered onSnapshot(collection) list queries with
+        // permission-denied because Firestore can't pre-prove it for all
+        // possible docs. Uid check alone is sufficient.
+        allow read: if request.auth != null && request.auth.uid == clientId;
+        // Writes still enforce the YYYY-MM-DD id format.
+        allow write: if request.auth != null
           && request.auth.uid == clientId
           && date.matches('^\\d{4}-\\d{2}-\\d{2}$');
       }

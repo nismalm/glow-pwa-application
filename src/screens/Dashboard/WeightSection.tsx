@@ -7,11 +7,17 @@ import { useWeightStore } from '@/stores/useWeightStore'
 
 export function WeightSection() {
   const entries = useWeightStore((s) => s.entries)
+  const loaded = useWeightStore((s) => s.loaded)
   const todayEntry = useWeightStore((s) => s.todayEntry)
   const logWeight = useWeightStore((s) => s.logWeight)
 
   const [kg, setKg] = useState('')
   const [error, setError] = useState('')
+
+  // Wait until the first Firestore snapshot has arrived before deciding what
+  // to render. Otherwise the prompt flashes for a beat on load even when
+  // today already has an entry on the server.
+  if (!loaded) return null
 
   const alreadyLoggedToday = !!todayEntry()
   const showPrompt = !alreadyLoggedToday
@@ -34,8 +40,11 @@ export function WeightSection() {
   }))
 
   const latest = entries[entries.length - 1]
-  const prev = entries[entries.length - 2]
-  const diff = latest && prev ? +(latest.kg - prev.kg).toFixed(1) : null
+  const first = entries[0]
+  const totalDiff =
+    latest && first && latest.date !== first.date
+      ? +(latest.kg - first.kg).toFixed(1)
+      : null
 
   return (
     <>
@@ -82,9 +91,9 @@ export function WeightSection() {
               <h3 className="text-[15px] font-bold text-ink">Weight history</h3>
               <p className="text-[12px] text-ink-soft">
                 {latest ? `${latest.kg} kg` : '—'}
-                {diff !== null && (
-                  <span className={`ml-2 font-semibold ${diff < 0 ? 'text-ok' : diff > 0 ? 'text-coral' : 'text-ink-mute'}`}>
-                    {diff > 0 ? `+${diff}` : diff} kg since last check-in
+                {totalDiff !== null && (
+                  <span className={`ml-2 font-semibold ${totalDiff < 0 ? 'text-ok' : totalDiff > 0 ? 'text-coral' : 'text-ink-mute'}`}>
+                    {totalDiff > 0 ? `+${totalDiff}` : totalDiff} kg total change
                   </span>
                 )}
               </p>

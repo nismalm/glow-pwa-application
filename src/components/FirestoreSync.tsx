@@ -143,16 +143,13 @@ export default function FirestoreSync() {
     return onSnapshot(collection(db, 'users', clientId, 'weights'), (snap) => {
       const entries: WeightEntry[] = snap.docs
         .map((d) => {
-          const data = d.data()
-          // Fall back to doc id when the date field is missing — manual console
-          // edits often omit the field but the id is always YYYY-MM-DD.
-          const date = (data['date'] as string | undefined) ?? d.id
-          return {
-            date,
-            kg: Number(data['kg']),
-          }
+          // Doc id is the authoritative date — write rule enforces the
+          // YYYY-MM-DD format. The `date` field inside the doc is redundant
+          // and can diverge if someone manually edits in the console, which
+          // corrupts the sort order. Always trust the id.
+          return { date: d.id, kg: Number(d.data()['kg']) }
         })
-        .filter((e) => typeof e.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(e.date) && !isNaN(e.kg))
+        .filter((e) => /^\d{4}-\d{2}-\d{2}$/.test(e.date) && !isNaN(e.kg) && e.kg > 0)
         .sort((a, b) => a.date.localeCompare(b.date))
       useWeightStore.getState().hydrateEntries(entries)
     }, onErr)
