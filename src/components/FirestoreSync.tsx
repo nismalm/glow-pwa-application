@@ -1,19 +1,20 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import {
   doc,
   collection,
   query,
-  orderBy,
   onSnapshot,
   setDoc,
   getDoc,
   serverTimestamp,
   runTransaction,
+  arrayUnion,
 } from 'firebase/firestore'
 import { format, subDays } from 'date-fns'
 import { db } from '@/lib/firebase'
 import { todayKey } from '@/lib/dates'
 import { setWriteDaily, setOnGoalHit, setWriteTask, setToggleTask, setWriteWeight } from '@/lib/storeSync'
+import { getFCMToken } from '@/lib/notifications'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useWaterStore } from '@/stores/useWaterStore'
 import { useExerciseStore } from '@/stores/useExerciseStore'
@@ -29,17 +30,31 @@ export default function FirestoreSync() {
   const user = useAuthStore((s) => s.user)
   const clientId = useAuthStore((s) => s.clientId)
   const displayName = useAuthStore((s) => s.displayName)
-  const today = todayKey()
 
-  const onErr = (e: Error) => console.warn('Firestore listener:', e.message)
+  // today as state so it updates at midnight without a page reload (Bug 8)
+  const [today, setToday] = useState(todayKey())
+  useEffect(() => {
+    const now = new Date()
+    const tomorrow = new Date(now)
+    tomorrow.setHours(24, 0, 0, 0)
+    const timer = setTimeout(() => setToday(todayKey()), tomorrow.getTime() - now.getTime())
+    return () => clearTimeout(timer)
+  }, [today])
+
+  // listenerKey increments on any listener error, causing all effects to re-subscribe (Bug 3)
+  const [listenerKey, setListenerKey] = useState(0)
+  const onErr = useCallback((e: Error) => {
+    console.warn('Firestore listener error — re-subscribing in 3s:', e.message)
+    setTimeout(() => setListenerKey((k) => k + 1), 3000)
+  }, [])
 
   // Ensure client profile exists; read joinedDate for weight tracking
   useEffect(() => {
     if (!user || !clientId) return
     const profileRef = doc(db, 'users', clientId)
+    const joinedDate = todayKey()
     getDoc(profileRef)
       .then((snap) => {
-        const joinedDate = today
         if (!snap.exists()) {
           setDoc(profileRef, {
             displayName,
@@ -55,7 +70,6 @@ export default function FirestoreSync() {
           const data = snap.data()
           const stored = (data['joinedDate'] as string | undefined) ?? joinedDate
           useWeightStore.getState().setJoinedDate(stored)
-          // Backfill joinedDate for users created before this field existed
           if (!data['joinedDate']) {
             setDoc(profileRef, { joinedDate }, { merge: true }).catch(console.error)
           }
@@ -63,6 +77,17 @@ export default function FirestoreSync() {
       })
       .catch(console.error)
   }, [user, clientId, displayName])
+
+  // Register FCM token if permission already granted (silent — no prompt here)
+  useEffect(() => {
+    if (!user || !clientId) return
+    if (!('Notification' in window) || Notification.permission !== 'granted') return
+    getFCMToken().then((token) => {
+      if (!token) return
+      const profileRef = doc(db, 'users', clientId)
+      setDoc(profileRef, { fcmTokens: arrayUnion(token) }, { merge: true }).catch(console.error)
+    })
+  }, [user, clientId])
 
   // Subscribe to today's daily log → hydrate stores
   useEffect(() => {
@@ -79,7 +104,7 @@ export default function FirestoreSync() {
       useRitualsStore.getState().hydrate(today, log.rituals ?? DEFAULT_RITUALS)
       useMoodStore.getState().hydrate(log.mood ?? null)
     }, onErr)
-  }, [user, clientId, today])
+  }, [user, clientId, today, listenerKey])
 
   // Subscribe to streak document → hydrate streak store
   useEffect(() => {
@@ -90,7 +115,7 @@ export default function FirestoreSync() {
         useStreakStore.getState().hydrate(snap.data() as Streak)
       }
     }, onErr)
-  }, [user, clientId])
+  }, [user, clientId, listenerKey])
 
   // Subscribe to tasks collection → hydrate tasks store
   useEffect(() => {
@@ -107,20 +132,28 @@ export default function FirestoreSync() {
       })
       useTasksStore.getState().hydrate(tasks)
     }, onErr)
-  }, [user, clientId])
+  }, [user, clientId, listenerKey])
 
-  // Subscribe to weights collection → hydrate weight store
+  // Subscribe to weights collection → hydrate weight store.
+  // No server-side orderBy: Firestore silently excludes docs missing the ordered field,
+  // and any query error permanently kills the listener. Sort client-side instead.
+  // Coerce kg to number so manually-inserted string values still appear (Bug 4/5).
   useEffect(() => {
     if (!user || !clientId) return
-    const q = query(
-      collection(db, 'users', clientId, 'weights'),
-      orderBy('date', 'asc'),
-    )
-    return onSnapshot(q, (snap) => {
-      const entries: WeightEntry[] = snap.docs.map((d) => d.data() as WeightEntry)
+    return onSnapshot(collection(db, 'users', clientId, 'weights'), (snap) => {
+      const entries: WeightEntry[] = snap.docs
+        .map((d) => {
+          const data = d.data()
+          return {
+            date: data['date'] as string,
+            kg: Number(data['kg']),
+          }
+        })
+        .filter((e) => typeof e.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(e.date) && !isNaN(e.kg))
+        .sort((a, b) => a.date.localeCompare(b.date))
       useWeightStore.getState().hydrateEntries(entries)
     }, onErr)
-  }, [user, clientId])
+  }, [user, clientId, listenerKey])
 
   // Wire daily log write bridge
   useEffect(() => {
@@ -180,12 +213,13 @@ export default function FirestoreSync() {
     }
   }, [user, clientId])
 
-  // Wire weight write bridge
+  // Wire weight write bridge — merge: true preserves any future fields,
+  // serverTimestamp provides a tiebreaker between concurrent device writes (Bug 7)
   useEffect(() => {
     if (!user || !clientId) return
     setWriteWeight(async (date, kg) => {
       const ref = doc(db, 'users', clientId, 'weights', date)
-      await setDoc(ref, { date, kg })
+      await setDoc(ref, { date, kg, updatedAt: serverTimestamp() }, { merge: true })
     })
     return () => setWriteWeight(null)
   }, [user, clientId])

@@ -1,5 +1,4 @@
 import {
-  signInAnonymously,
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
@@ -14,6 +13,7 @@ googleProvider.setCustomParameters({ prompt: 'select_account' })
 
 const isIOS =
   /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 
 // All iOS browsers (Safari, Chrome-on-iOS = WKWebView, in-app browsers, and
@@ -21,8 +21,6 @@ const isIOS =
 // arrives. signInWithRedirect is the only reliable path on any iOS context.
 // Desktop (Mac/Windows/Linux) handles popup correctly.
 const shouldUseRedirect = isIOS
-
-export const signInAnon = () => signInAnonymously(auth)
 
 export const signInGoogle = () =>
   shouldUseRedirect

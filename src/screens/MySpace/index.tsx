@@ -5,6 +5,7 @@ import { Calendar } from './Calendar'
 import { TaskList } from './TaskList'
 import { MoodPicker } from './MoodPicker'
 import { MoodChart } from './MoodChart'
+import { NotificationToggle } from './NotificationToggle'
 
 export default function MySpaceScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date())
@@ -18,6 +19,7 @@ export default function MySpaceScreen() {
       <TaskList selectedDate={selectedDate} />
       <MoodPicker />
       <MoodChart />
+      <NotificationToggle />
     </div>
   )
 }

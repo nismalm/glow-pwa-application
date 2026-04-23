@@ -6,6 +6,7 @@ import {
   browserPopupRedirectResolver,
 } from 'firebase/auth'
 import { initializeFirestore, persistentLocalCache } from 'firebase/firestore'
+import { getMessaging, isSupported } from 'firebase/messaging'
 
 // On deployed environments, use the current hostname as authDomain so Firebase's
 // /__/auth/iframe is same-origin — iOS Safari ITP blocks cross-origin iframe
@@ -37,3 +38,6 @@ export const auth = initializeAuth(app, {
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache(),
 })
+
+// Resolves to Messaging instance or null (unsupported browsers / iOS Safari without PWA)
+export const messagingPromise = isSupported().then((yes) => (yes ? getMessaging(app) : null))
