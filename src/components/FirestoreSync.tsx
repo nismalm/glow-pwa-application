@@ -144,8 +144,11 @@ export default function FirestoreSync() {
       const entries: WeightEntry[] = snap.docs
         .map((d) => {
           const data = d.data()
+          // Fall back to doc id when the date field is missing — manual console
+          // edits often omit the field but the id is always YYYY-MM-DD.
+          const date = (data['date'] as string | undefined) ?? d.id
           return {
-            date: data['date'] as string,
+            date,
             kg: Number(data['kg']),
           }
         })

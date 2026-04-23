@@ -5,7 +5,11 @@ import {
   browserLocalPersistence,
   browserPopupRedirectResolver,
 } from 'firebase/auth'
-import { initializeFirestore, persistentLocalCache } from 'firebase/firestore'
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from 'firebase/firestore'
 import { getMessaging, isSupported } from 'firebase/messaging'
 
 // On deployed environments, use the current hostname as authDomain so Firebase's
@@ -35,8 +39,13 @@ export const auth = initializeAuth(app, {
   popupRedirectResolver: browserPopupRedirectResolver,
 })
 
+// Multi-tab manager: a PWA user commonly has the site open in Safari AND the
+// installed PWA simultaneously. Default single-tab mode silently kills the
+// listener in the "losing" tab, so remote writes never reach the UI on that
+// device/tab. The multi-tab manager shares the IndexedDB lease so every tab
+// keeps a live snapshot stream.
 export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache(),
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
 })
 
 // Resolves to Messaging instance or null (unsupported browsers / iOS Safari without PWA)

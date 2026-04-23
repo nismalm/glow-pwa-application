@@ -23,11 +23,20 @@ export const useWeightStore = create<WeightState>((set, get) => ({
   hydrateEntries: (entries) => set({ entries }),
 
   logWeight: (kg) => {
-    // No optimistic update — persistentLocalCache fires the Firestore snapshot
-    // from local IndexedDB within milliseconds, driving the UI correctly.
-    // Optimistic updates caused a race where hydrateEntries() would overwrite
-    // a locally-staged entry with a stale snapshot.
-    writeWeight(todayKey(), kg)
+    // Optimistic update keyed by date: replace any existing entry for today,
+    // then re-sort. The snapshot listener will later overwrite with server
+    // truth via hydrateEntries — since the date key matches, the entry is
+    // replaced in place (no flicker, no duplicate). This keeps the UI
+    // responsive when the cache snapshot is delayed (offline, cold PWA
+    // relaunch, or tabs that lost the IndexedDB lease before the multi-tab
+    // manager was introduced).
+    const date = todayKey()
+    set((s) => ({
+      entries: [...s.entries.filter((e) => e.date !== date), { date, kg }].sort(
+        (a, b) => a.date.localeCompare(b.date),
+      ),
+    }))
+    writeWeight(date, kg)
   },
 
   todayEntry: () => {
